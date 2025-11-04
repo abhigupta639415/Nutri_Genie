@@ -10,6 +10,7 @@ const workoutRoutes = require('./routes/workoutRoutes');
 const progressRoutes = require('./routes/progressRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
 const todoRoutes = require('./routes/todoRoutes');
+const foodRoutes = require('./routes/foodRoutes');
 
 // Initialize express app
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/workout', workoutRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/todos', todoRoutes);
+app.use('/api/food', foodRoutes);
 
 // Health check route
 app.get('/', (req, res) => {
@@ -41,7 +43,8 @@ app.get('/', (req, res) => {
       workout: '/api/workout',
       progress: '/api/progress',
       chatbot: '/api/chatbot',
-      todos: '/api/todos'
+      todos: '/api/todos',
+      food: '/api/food'
     }
   });
 });

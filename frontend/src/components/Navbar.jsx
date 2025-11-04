@@ -53,6 +53,9 @@ const Navbar = () => {
                 <Link to="/chatbot" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
                   NutriBot
                 </Link>
+                <Link to="/food-analyzer" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
+                  Food Scan
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:scale-105 font-semibold ml-2"
@@ -106,6 +109,9 @@ const Navbar = () => {
                 </Link>
                 <Link to="/chatbot" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
                   NutriBot
+                </Link>
+                <Link to="/food-analyzer" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
+                  Food Scan
                 </Link>
                 <button onClick={handleLogout} className="w-full text-left px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg font-semibold transition-all mt-2">
                   Logout

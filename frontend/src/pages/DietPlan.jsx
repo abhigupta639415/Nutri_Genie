@@ -123,7 +123,7 @@ const DietPlan = () => {
     return images[(day - 1) % images.length];
   };
 
-  // Varied Indian Meals Database (10 variations per meal type, repeats every 3 days)
+  // Varied Indian Meals Database (30 unique variations per meal type for 30 days)
   const mealVariations = {
     breakfast: [
       { name: 'Masala Dosa with Sambar & Coconut Chutney', calories: 350, protein: 8 },
@@ -135,7 +135,27 @@ const DietPlan = () => {
       { name: 'Methi Thepla with Curd', calories: 340, protein: 10 },
       { name: 'Besan Chilla with Mint Chutney', calories: 290, protein: 12 },
       { name: 'Uttapam with Mixed Vegetables', calories: 320, protein: 9 },
-      { name: 'Oats Upma with Vegetables', calories: 270, protein: 8 }
+      { name: 'Oats Upma with Vegetables', calories: 270, protein: 8 },
+      { name: 'Rava Idli with Coconut Chutney', calories: 295, protein: 7 },
+      { name: 'Sabudana Khichdi with Peanuts', calories: 330, protein: 6 },
+      { name: 'Moong Dal Cheela with Tomato Chutney', calories: 285, protein: 11 },
+      { name: 'Vermicelli Upma with Vegetables', calories: 305, protein: 7 },
+      { name: 'Ragi Dosa with Sambar', calories: 275, protein: 8 },
+      { name: 'Puri Bhaji with Aloo Sabzi', calories: 450, protein: 9 },
+      { name: 'Egg Bhurji with Toast (2 slices)', calories: 320, protein: 18 },
+      { name: 'Oats Pancakes with Honey', calories: 290, protein: 9 },
+      { name: 'Pesarattu with Ginger Chutney', calories: 310, protein: 10 },
+      { name: 'Suji Halwa with Milk', calories: 340, protein: 8 },
+      { name: 'Bread Pakora (2) with Chutney', calories: 360, protein: 8 },
+      { name: 'Quinoa Upma with Vegetables', calories: 280, protein: 9 },
+      { name: 'Stuffed Paratha with Raita', calories: 410, protein: 11 },
+      { name: 'Rawa Dosa with Potato Filling', calories: 325, protein: 7 },
+      { name: 'Vegetable Poha with Curry Leaves', calories: 295, protein: 6 },
+      { name: 'Omelette with Whole Wheat Toast', calories: 315, protein: 17 },
+      { name: 'Medu Vada (2) with Sambar', calories: 340, protein: 8 },
+      { name: 'Corn Flakes with Milk & Fruits', calories: 265, protein: 8 },
+      { name: 'Mixed Vegetable Paratha with Curd', calories: 395, protein: 10 },
+      { name: 'Sprouts Sandwich with Mint Chutney', calories: 305, protein: 12 }
     ],
     lunch: [
       { name: 'Dal Tadka, Jeera Rice, Roti, Mixed Veg Curry', calories: 550, protein: 18 },
@@ -147,7 +167,27 @@ const DietPlan = () => {
       { name: 'Kadhi Pakora with Steamed Rice', calories: 510, protein: 13 },
       { name: 'Mix Veg Curry, Chapati (3), Dal, Salad', calories: 530, protein: 17 },
       { name: 'Palak Paneer, Roti (2), Jeera Rice', calories: 570, protein: 21 },
-      { name: 'Aloo Gobi, Dal Makhani, Rice, Roti', calories: 540, protein: 16 }
+      { name: 'Aloo Gobi, Dal Makhani, Rice, Roti', calories: 540, protein: 16 },
+      { name: 'Matar Paneer, Pulao, Raita', calories: 590, protein: 19 },
+      { name: 'Baingan Bharta, Chapati (3), Dal', calories: 505, protein: 15 },
+      { name: 'Veg Pulao, Boondi Raita, Papad', calories: 495, protein: 12 },
+      { name: 'Chana Masala, Jeera Rice, Roti (2)', calories: 560, protein: 18 },
+      { name: 'Mushroom Curry, Brown Rice, Salad', calories: 485, protein: 14 },
+      { name: 'Paneer Tikka Masala, Butter Naan, Dal', calories: 635, protein: 23 },
+      { name: 'Vegetable Korma, Pulao, Cucumber Raita', calories: 555, protein: 15 },
+      { name: 'Bhindi Masala, Roti (3), Moong Dal', calories: 520, protein: 16 },
+      { name: 'Dum Aloo, Jeera Rice, Mixed Dal', calories: 575, protein: 17 },
+      { name: 'Tofu Curry, Brown Rice, Salad', calories: 510, protein: 20 },
+      { name: 'Kofta Curry, Naan, Dal Fry', calories: 610, protein: 18 },
+      { name: 'Veg Thali: Dal, Sabzi, Roti, Rice', calories: 545, protein: 19 },
+      { name: 'Paneer Bhurji, Roti (2), Raita', calories: 525, protein: 22 },
+      { name: 'Aloo Matar, Chapati (3), Dal', calories: 500, protein: 14 },
+      { name: 'Egg Curry, Rice, Salad', calories: 535, protein: 21 },
+      { name: 'Veg Fried Rice with Manchurian', calories: 580, protein: 13 },
+      { name: 'Soya Chunk Curry, Roti (2), Rice', calories: 555, protein: 24 },
+      { name: 'Lauki Kofta Curry, Pulao, Raita', calories: 530, protein: 16 },
+      { name: 'Methi Malai Paneer, Naan, Dal', calories: 600, protein: 20 },
+      { name: 'Veg Biryani Bowl with Raita & Salad', calories: 515, protein: 15 }
     ],
     dinner: [
       { name: 'Khichdi with Curd & Papad', calories: 400, protein: 12 },
@@ -159,7 +199,27 @@ const DietPlan = () => {
       { name: 'Vegetable Soup with Whole Wheat Bread', calories: 310, protein: 9 },
       { name: 'Roti (2), Dal Tadka, Lauki Curry', calories: 390, protein: 13 },
       { name: 'Grilled Paneer Sandwich with Soup', calories: 360, protein: 16 },
-      { name: 'Vegetable Khichdi with Curd', calories: 410, protein: 12 }
+      { name: 'Vegetable Khichdi with Curd', calories: 410, protein: 12 },
+      { name: 'Roti (2) with Palak Dal & Salad', calories: 375, protein: 14 },
+      { name: 'Quinoa Salad with Grilled Vegetables', calories: 340, protein: 11 },
+      { name: 'Chapati (2), Rajma, Cucumber Salad', calories: 425, protein: 15 },
+      { name: 'Veg Clear Soup with Multigrain Bread', calories: 295, protein: 8 },
+      { name: 'Roti (2), Aloo Curry, Sprouts Salad', calories: 395, protein: 12 },
+      { name: 'Paneer Salad Bowl with Hummus', calories: 370, protein: 18 },
+      { name: 'Khichdi with Mixed Vegetables', calories: 385, protein: 11 },
+      { name: 'Roti (2), Chana Dal, Beetroot Salad', calories: 405, protein: 14 },
+      { name: 'Grilled Veg Sandwich with Tomato Soup', calories: 355, protein: 10 },
+      { name: 'Brown Rice, Dal, Stir-fried Veggies', calories: 415, protein: 13 },
+      { name: 'Stuffed Roti (2) with Curd', calories: 430, protein: 12 },
+      { name: 'Vegetable Noodle Soup Bowl', calories: 325, protein: 9 },
+      { name: 'Roti (2), Moong Dal, Cabbage Sabzi', calories: 380, protein: 13 },
+      { name: 'Paneer Wrap with Green Salad', calories: 395, protein: 17 },
+      { name: 'Millet Khichdi with Buttermilk', calories: 365, protein: 10 },
+      { name: 'Roti (2), Mix Dal, Carrot Salad', calories: 400, protein: 14 },
+      { name: 'Egg White Omelette with Salad', calories: 280, protein: 18 },
+      { name: 'Wheat Pasta with Vegetables', calories: 420, protein: 12 },
+      { name: 'Roti (2), Toor Dal, Pumpkin Curry', calories: 390, protein: 13 },
+      { name: 'Grilled Tofu Salad with Quinoa', calories: 345, protein: 16 }
     ],
     snacks: [
       { name: 'Sprouted Moong Salad with Lemon', calories: 150, protein: 8 },
@@ -171,14 +231,34 @@ const DietPlan = () => {
       { name: 'Roasted Makhana (Fox Nuts) - 1 bowl', calories: 130, protein: 4 },
       { name: 'Cucumber Raita with Jeera', calories: 100, protein: 4 },
       { name: 'Banana with Peanut Butter', calories: 190, protein: 6 },
-      { name: 'Masala Buttermilk with Roasted Papad', calories: 110, protein: 5 }
+      { name: 'Masala Buttermilk with Roasted Papad', calories: 110, protein: 5 },
+      { name: 'Apple Slices with Almond Butter', calories: 175, protein: 5 },
+      { name: 'Roasted Peanuts - 1/2 cup', calories: 165, protein: 7 },
+      { name: 'Greek Yogurt with Berries', calories: 140, protein: 10 },
+      { name: 'Boiled Egg (2) with Salt & Pepper', calories: 155, protein: 13 },
+      { name: 'Vegetable Soup - 1 bowl', calories: 95, protein: 3 },
+      { name: 'Roasted Corn with Lime & Chili', calories: 125, protein: 4 },
+      { name: 'Paneer Cubes (50g) with Mint Chutney', calories: 145, protein: 9 },
+      { name: 'Trail Mix (Nuts & Dried Fruits)', calories: 185, protein: 6 },
+      { name: 'Wheat Crackers with Hummus', calories: 155, protein: 5 },
+      { name: 'Steamed Corn Chaat', calories: 135, protein: 4 },
+      { name: 'Baked Sweet Potato Chips', calories: 140, protein: 2 },
+      { name: 'Carrot & Cucumber Sticks with Dip', calories: 90, protein: 3 },
+      { name: 'Multigrain Cookies (2) with Tea', calories: 160, protein: 4 },
+      { name: 'Roasted Sunflower Seeds', calories: 170, protein: 6 },
+      { name: 'Fruit Smoothie with Oats', calories: 195, protein: 5 },
+      { name: 'Boiled Black Chana Chaat', calories: 145, protein: 8 },
+      { name: 'Rice Cakes with Avocado', calories: 150, protein: 4 },
+      { name: 'Protein Bar (Homemade)', calories: 180, protein: 8 },
+      { name: 'Bhel Puri (Light)', calories: 135, protein: 4 },
+      { name: 'Green Tea with Marie Biscuits (2)', calories: 100, protein: 2 }
     ]
   };
 
   const getMealForDay = (day, mealType) => {
     const variations = mealVariations[mealType];
-    // Repeat every 3 days for variety
-    const index = Math.floor((day - 1) / 3) % variations.length;
+    // Each day gets a unique meal (day 1 = index 0, day 2 = index 1, etc.)
+    const index = (day - 1) % variations.length;
     return variations[index];
   };
 
@@ -360,8 +440,8 @@ const DietPlan = () => {
                   </div>
                 </div>
 
-                {/* Meals Grid */}
-                <div className="p-6 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Meals Grid - Instagram Feed Style */}
+                <div className="p-6 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
                   {['breakfast', 'lunch', 'dinner', 'snacks'].map((mealType) => {
                     const meal = getMealForDay(day, mealType);
                     const isCompleted = isMealCompleted(day, mealType);
@@ -369,62 +449,97 @@ const DietPlan = () => {
                     return (
                       <div
                         key={mealType}
-                        className={`relative bg-slate-800/50 rounded-xl overflow-hidden border-2 transition-all duration-300 transform hover:scale-105 cursor-pointer ${
+                        className={`relative bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl cursor-pointer ${
                           isCompleted 
-                            ? 'border-green-500 shadow-xl shadow-green-500/30' 
-                            : 'border-white/10 hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/20'
+                            ? 'ring-4 ring-green-500/50' 
+                            : 'hover:shadow-cyan-500/20'
                         }`}
                         onClick={() => toggleMealComplete(day, mealType)}
                       >
-                        {/* Meal Image */}
-                        <div className="relative h-40 overflow-hidden">
+                        {/* Instagram-style Image Container */}
+                        <div className="relative aspect-square overflow-hidden">
                           <img
                             src={getMealImage(mealType, day)}
                             alt={mealType}
-                            className={`w-full h-full object-cover transition-all duration-300 ${isCompleted ? 'opacity-60' : 'opacity-100'}`}
+                            className={`w-full h-full object-cover transition-all duration-300 ${isCompleted ? 'opacity-70' : 'opacity-100'}`}
                           />
-                          <div className={`absolute inset-0 bg-gradient-to-t ${mealColors[mealType]} ${isCompleted ? 'opacity-40' : 'opacity-60'}`}></div>
                           
-                          {/* Checkbox */}
+                          {/* Gradient Overlay */}
+                          <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent`}></div>
+                          
+                          {/* Checkbox - Instagram Story Style */}
                           <div className="absolute top-3 right-3 z-10">
                             <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
                                 isCompleted
-                                  ? 'bg-green-500 scale-110 shadow-green-500/50'
-                                  : 'bg-white/30 backdrop-blur-sm border-2 border-white hover:bg-white/50'
+                                  ? 'bg-green-500 scale-110'
+                                  : 'bg-white/80 backdrop-blur-md border-2 border-white/50 hover:bg-white'
                               }`}
                             >
-                              {isCompleted && <Check className="w-6 h-6 text-white" />}
+                              {isCompleted && <Check className="w-6 h-6 text-white font-bold" />}
                             </div>
                           </div>
 
-                          {/* Meal Type Badge */}
-                          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-2 shadow-lg">
-                            {mealIcons[mealType]}
-                            <span className="text-xs font-bold text-gray-900 capitalize">{mealType}</span>
+                          {/* Meal Type Badge - Instagram Style */}
+                          <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 shadow-lg border border-white/20">
+                            <div className="text-white">{mealIcons[mealType]}</div>
+                            <span className="text-xs font-bold text-white capitalize tracking-wide">{mealType}</span>
                           </div>
 
                           {/* Completed Overlay */}
                           {isCompleted && (
-                            <div className="absolute inset-0 bg-green-500/20 backdrop-blur-[1px] flex items-center justify-center">
-                              <div className="text-6xl animate-bounce">✓</div>
+                            <div className="absolute inset-0 bg-green-500/10 backdrop-blur-[2px] flex items-center justify-center">
+                              <div className="w-20 h-20 bg-green-500/90 rounded-full flex items-center justify-center shadow-2xl">
+                                <Check className="w-12 h-12 text-white" />
+                              </div>
                             </div>
                           )}
+                          
+                          {/* Bottom Info Overlay - Instagram Style */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                <Flame className="w-4 h-4 text-orange-400" />
+                                <span className="text-sm font-bold">{meal.calories}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                <Zap className="w-4 h-4 text-yellow-400" />
+                                <span className="text-sm font-bold">{meal.protein}g</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Meal Info */}
-                        <div className="p-4">
-                          <h4 className={`font-bold text-sm mb-3 line-clamp-2 ${isCompleted ? 'text-green-400' : 'text-white'}`}>
-                            {meal.name}
-                          </h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-slate-700/50 p-2 rounded-lg">
-                              <div className="text-xs text-slate-400">Calories</div>
-                              <div className="text-lg font-bold text-orange-400">{meal.calories}</div>
+                        {/* Instagram-style Caption */}
+                        <div className="p-4 bg-white">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-xs font-bold">D{day}</span>
                             </div>
-                            <div className="bg-slate-700/50 p-2 rounded-lg">
-                              <div className="text-xs text-slate-400">Protein</div>
-                              <div className="text-lg font-bold text-red-400">{meal.protein}g</div>
+                            <div className="flex-1">
+                              <h4 className={`font-bold text-sm leading-snug text-gray-900 mb-1 ${isCompleted ? 'line-through opacity-60' : ''}`}>
+                                {meal.name}
+                              </h4>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>Day {day}</span>
+                                <span>•</span>
+                                <span className="capitalize">{mealType}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Instagram-style Action Bar */}
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                            <div className="flex items-center gap-4">
+                              <button className={`transition-colors ${isCompleted ? 'text-green-500' : 'text-gray-400 hover:text-red-500'}`}>
+                                {isCompleted ? '❤️' : '🤍'}
+                              </button>
+                              <button className="text-gray-400 hover:text-cyan-500 transition-colors">
+                                💬
+                              </button>
+                            </div>
+                            <div className={`text-xs font-semibold ${isCompleted ? 'text-green-500' : 'text-gray-400'}`}>
+                              {isCompleted ? 'Completed ✓' : 'Mark as done'}
                             </div>
                           </div>
                         </div>

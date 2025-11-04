@@ -13,6 +13,7 @@ import Workout from './pages/Workout';
 import Progress from './pages/Progress';
 import Todos from './pages/Todos';
 import Chatbot from './pages/Chatbot';
+import FoodAnalyzer from './pages/FoodAnalyzer';
 
 function App() {
   return (
@@ -76,6 +77,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Chatbot />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/food-analyzer"
+                element={
+                  <ProtectedRoute>
+                    <FoodAnalyzer />
                   </ProtectedRoute>
                 }
               />
