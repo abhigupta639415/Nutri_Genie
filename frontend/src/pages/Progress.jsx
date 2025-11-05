@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Calendar, TrendingUp, Activity, Flame, Droplet, Moon } from 'lucide-react';
+import { Calendar, TrendingUp, Activity, Flame, Droplet, Moon, Plus, Smile, Save } from 'lucide-react';
 
 const Progress = () => {
   const [progressData, setProgressData] = useState(null);
   const [period, setPeriod] = useState('week');
   const [loading, setLoading] = useState(true);
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    caloriesConsumed: '',
+    caloriesBurned: '',
+    weight: '',
+    waterIntake: '',
+    sleepHours: '',
+    mood: 'okay'
+  });
 
   useEffect(() => {
     fetchProgress();
@@ -21,6 +31,51 @@ const Progress = () => {
       console.error('Error fetching progress:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmitProgress = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:3001/api/progress', {
+        caloriesConsumed: parseInt(formData.caloriesConsumed) || 0,
+        caloriesBurned: parseInt(formData.caloriesBurned) || 0,
+        weight: parseFloat(formData.weight),
+        waterIntake: parseFloat(formData.waterIntake) || 0,
+        sleepHours: parseFloat(formData.sleepHours) || 0,
+        mood: formData.mood
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Reset form and refresh data
+      setFormData({
+        caloriesConsumed: '',
+        caloriesBurned: '',
+        weight: '',
+        waterIntake: '',
+        sleepHours: '',
+        mood: 'okay'
+      });
+      setShowLogForm(false);
+      fetchProgress();
+      alert('Progress logged successfully! 🎉');
+    } catch (error) {
+      console.error('Error logging progress:', error);
+      alert('Failed to log progress. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -55,6 +110,13 @@ const Progress = () => {
           </div>
 
           <div className="mt-4 md:mt-0 flex space-x-2">
+            <button
+              onClick={() => setShowLogForm(!showLogForm)}
+              className="px-5 py-3 rounded-xl font-bold transition-all bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Log Progress
+            </button>
             {['week', 'month'].map((p) => (
               <button
                 key={p}
@@ -70,6 +132,142 @@ const Progress = () => {
             ))}
           </div>
         </div>
+
+        {/* Log Progress Form */}
+        {showLogForm && (
+          <div className="mb-8 glass-dark p-8 rounded-2xl border border-green-500/30 shadow-2xl animate-fade-in">
+            <h2 className="text-3xl font-black text-white mb-6 flex items-center gap-3">
+              <Activity className="w-8 h-8 text-green-400" />
+              Log Today's Progress
+            </h2>
+            <form onSubmit={handleSubmitProgress} className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <Flame className="w-4 h-4 inline mr-2 text-orange-400" />
+                  Calories Consumed
+                </label>
+                <input
+                  type="number"
+                  name="caloriesConsumed"
+                  value={formData.caloriesConsumed}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 2000"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <Activity className="w-4 h-4 inline mr-2 text-green-400" />
+                  Calories Burned
+                </label>
+                <input
+                  type="number"
+                  name="caloriesBurned"
+                  value={formData.caloriesBurned}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 500"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <TrendingUp className="w-4 h-4 inline mr-2 text-blue-400" />
+                  Current Weight (kg) *
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="weight"
+                  value={formData.weight}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 70.5"
+                  required
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <Droplet className="w-4 h-4 inline mr-2 text-cyan-400" />
+                  Water Intake (liters)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="waterIntake"
+                  value={formData.waterIntake}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 2.5"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <Moon className="w-4 h-4 inline mr-2 text-purple-400" />
+                  Sleep Hours
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  name="sleepHours"
+                  value={formData.sleepHours}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 7.5"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  <Smile className="w-4 h-4 inline mr-2 text-yellow-400" />
+                  Mood
+                </label>
+                <select
+                  name="mood"
+                  value={formData.mood}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
+                >
+                  <option value="excellent">😄 Excellent</option>
+                  <option value="good">😊 Good</option>
+                  <option value="okay">😐 Okay</option>
+                  <option value="tired">😴 Tired</option>
+                  <option value="stressed">😰 Stressed</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 flex gap-4">
+                <button
+                  type="submit"
+                  disabled={saving || !formData.weight}
+                  className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Save Progress
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLogForm(false)}
+                  className="px-8 py-4 glass-dark text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition-all border border-white/10"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Summary Cards */}
         {progressData?.summary && (

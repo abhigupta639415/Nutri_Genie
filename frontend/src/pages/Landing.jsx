@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, TrendingUp, Brain, Award, Users, CheckCircle, ChevronDown, Sparkles, Zap, Target, Dumbbell, Apple, Activity } from 'lucide-react';
 
 const Landing = () => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState({});
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
@@ -109,12 +111,18 @@ const Landing = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                <button className="group px-10 py-5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white text-lg font-bold rounded-2xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 relative overflow-hidden">
+                <button 
+                  onClick={() => navigate('/register')}
+                  className="group px-10 py-5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white text-lg font-bold rounded-2xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 relative overflow-hidden"
+                >
                   <span className="relative z-10">Start Your Journey</span>
                   <Zap className="w-6 h-6 group-hover:rotate-12 transition-transform relative z-10" />
                   <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
-                <button className="px-10 py-5 bg-slate-800/50 backdrop-blur-sm text-cyan-400 text-lg font-bold rounded-2xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-cyan-500/30">
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-10 py-5 bg-slate-800/50 backdrop-blur-sm text-cyan-400 text-lg font-bold rounded-2xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-cyan-500/30"
+                >
                   Login
                 </button>
               </div>
@@ -409,7 +417,10 @@ const Landing = () => {
           <p className="text-2xl text-white/90 mb-12 leading-relaxed">
             Join thousands of users achieving their fitness goals with NutriGenie
           </p>
-          <button className="group px-12 py-6 bg-white text-purple-600 text-xl font-black rounded-2xl hover:bg-slate-100 transition-all duration-300 shadow-2xl transform hover:scale-110 inline-flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/register')}
+            className="group px-12 py-6 bg-white text-purple-600 text-xl font-black rounded-2xl hover:bg-slate-100 transition-all duration-300 shadow-2xl transform hover:scale-110 inline-flex items-center gap-3"
+          >
             Get Started Free
             <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
           </button>
