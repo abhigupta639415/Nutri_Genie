@@ -442,7 +442,7 @@ const Landing = () => {
               © 2024 NutriGenie. Your AI-Powered Fitness Companion
             </p>
             <p className="text-slate-500">
-              Made with ❤️ for a healthier India
+              Made with ❤️ by the NutriGenie team. All rights reserved.
             </p>
           </div>
         </div>
