@@ -43,8 +43,8 @@ User's question: ${message}
 
 Provide a helpful, friendly response:`;
 
-    // Call Gemini API directly using REST (using gemini-2.0-flash model)
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    // Call Gemini API directly using REST (using gemini-3.5-flash model)
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
     
     const apiResponse = await fetch(apiUrl, {
       method: 'POST',

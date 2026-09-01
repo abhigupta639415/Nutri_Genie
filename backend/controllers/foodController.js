@@ -18,7 +18,7 @@ const analyzeFoodImage = async (req, res) => {
     const base64Image = imageBuffer.toString('base64');
 
     // Get Gemini model with vision capabilities
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     // Create the prompt for food analysis
     const prompt = `You are a nutrition expert. Analyze this food image and identify the food item.
