@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const emailService = require('../services/email.service');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -42,6 +43,8 @@ const register = async (req, res) => {
         email: user.email,
         token: generateToken(user._id)
       });
+      // Send registration email
+      await emailService.sendRegisterationEmail(user.email, user.name);
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -66,6 +69,11 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    
+     emailService.sendLoginEmail(user.email, user.name)
+      .catch((error) => {
+        console.error('Login email failed:', error);
+      });
 
     res.json({
       _id: user._id,
@@ -73,9 +81,12 @@ const login = async (req, res) => {
       email: user.email,
       token: generateToken(user._id)
     });
+
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+ 
+  
 };
 
 // @desc    Get user profile
