@@ -1,21 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import { Coffee, Sun, Moon as MoonIcon, Apple, TrendingUp, Activity, Calendar, Check, Target, Flame, ChevronLeft, ChevronRight, Award, Zap, CheckCircle } from 'lucide-react';
 
 const DietPlan = () => {
+  const { user } = useAuth();
   const [dietData, setDietData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [completedMeals, setCompletedMeals] = useState({});
 
+  // Build a per-user localStorage key
+  const getStorageKey = useCallback(() => {
+    const userId = user?._id || user?.id || 'guest';
+    return `nutrigenie_completed_meals_${userId}`;
+  }, [user]);
+
+  // Load completed meals from localStorage (per-user)
+  const loadCompletedMeals = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(getStorageKey());
+      if (saved) {
+        setCompletedMeals(JSON.parse(saved));
+      } else {
+        setCompletedMeals({});
+      }
+    } catch (e) {
+      console.error('Error loading completed meals:', e);
+      setCompletedMeals({});
+    }
+  }, [getStorageKey]);
+
+  // Fetch diet plan from backend
   useEffect(() => {
     fetchDietPlan();
-    loadCompletedMeals();
   }, []);
 
+  // Load saved meals whenever user changes (login / page refresh)
   useEffect(() => {
-    saveCompletedMeals();
-  }, [completedMeals]);
+    if (user) {
+      loadCompletedMeals();
+    }
+  }, [user, loadCompletedMeals]);
+
+  // Persist completed meals to localStorage whenever they change
+  useEffect(() => {
+    if (user && Object.keys(completedMeals).length > 0) {
+      localStorage.setItem(getStorageKey(), JSON.stringify(completedMeals));
+    }
+  }, [completedMeals, getStorageKey, user]);
 
   const fetchDietPlan = async () => {
     try {
@@ -26,17 +59,6 @@ const DietPlan = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadCompletedMeals = () => {
-    const saved = localStorage.getItem('nutrigenie_completed_meals');
-    if (saved) {
-      setCompletedMeals(JSON.parse(saved));
-    }
-  };
-
-  const saveCompletedMeals = () => {
-    localStorage.setItem('nutrigenie_completed_meals', JSON.stringify(completedMeals));
   };
 
   const toggleMealComplete = (day, mealType) => {
