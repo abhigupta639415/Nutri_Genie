@@ -9,6 +9,13 @@ const generateToken = (id) => {
   });
 };
 
+// Generate a 6-digit verification code
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const VERIFICATION_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -22,7 +29,9 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user
+    const verificationCode = generateVerificationCode();
+
+    // Create user (unverified — no token is issued until they confirm their email)
     const user = await User.create({
       name,
       email,
@@ -33,19 +42,103 @@ const register = async (req, res) => {
       height,
       goal,
       activityLevel,
-      dietaryPreference
+      dietaryPreference,
+      verificationToken: verificationCode,
+      verificationTokenExpires: Date.now() + VERIFICATION_CODE_TTL_MS
     });
 
     if (user) {
       res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        token: generateToken(user._id)
+        message: 'Registration successful. Please check your email for a verification code.',
+        email: user.email
       });
-      // Send registration email
-      await emailService.sendRegisterationEmail(user.email, user.name);
+
+      // Send the code by email. Fire-and-forget so a slow mail server
+      // doesn't hold up the response; failures are logged, not thrown.
+      emailService.sendverificationEmail(user.email, user.name, verificationCode)
+        .catch((error) => {
+          console.error('Verification email failed:', error);
+        });
     }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Verify a user's email with the 6-digit code
+// @route   POST /api/auth/verify-email
+// @access  Public
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, verificationCode } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    if (!user.verificationToken || user.verificationToken !== verificationCode) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (user.verificationTokenExpires && user.verificationTokenExpires < Date.now()) {
+      return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+    }
+
+    // Mark the user as verified and clear the code
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+    await user.save();
+
+    // Welcome email now that they're actually verified (fire-and-forget)
+    emailService.sendRegisterationEmail(user.email, user.name)
+      .catch((error) => {
+        console.error('Welcome email failed:', error);
+      });
+
+    // Verification succeeded — this is the point where they actually get logged in
+    res.json({
+      message: 'Email verified successfully',
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user._id)
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Resend a fresh verification code
+// @route   POST /api/auth/resend-verification
+// @access  Public
+const resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    const verificationCode = generateVerificationCode();
+    user.verificationToken = verificationCode;
+    user.verificationTokenExpires = Date.now() + VERIFICATION_CODE_TTL_MS;
+    await user.save();
+
+    await emailService.sendverificationEmail(user.email, user.name, verificationCode);
+
+    res.json({ message: 'A new verification code has been sent to your email.' });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -69,8 +162,18 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-    
-     emailService.sendLoginEmail(user.email, user.name)
+
+    // Block unverified accounts — send back enough info for the frontend
+    // to route the user straight to the verify-email screen
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email before logging in.',
+        needsVerification: true,
+        email: user.email
+      });
+    }
+
+    emailService.sendLoginEmail(user.email, user.name)
       .catch((error) => {
         console.error('Login email failed:', error);
       });
@@ -85,8 +188,6 @@ const login = async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
- 
-  
 };
 
 // @desc    Get user profile
@@ -131,5 +232,7 @@ module.exports = {
   register,
   login,
   getProfile,
-  updateProfile
+  updateProfile,
+  verifyEmail,
+  resendVerificationCode
 };

@@ -47,6 +47,241 @@ const sendEmail = async (to, subject, text, html) => {
     
 //     await sendEmail(userEmail, subject, text, html);
 // }
+
+
+async function sendverificationEmail(userEmail, userName, verificationCode) {
+    const subject = 'Verify Your Email for NutriGenie! 📨';
+
+    const text = `Hello ${userName},
+
+Thank you for registering with NutriGenie!
+
+Please verify your email address using the verification code below:
+
+${verificationCode}
+
+This code will expire shortly. If you did not create a NutriGenie account, you can safely ignore this email.
+
+Best regards,
+The NutriGenie Team`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - NutriGenie</title>
+</head>
+
+<body style="
+    margin:0;
+    padding:0;
+    background-color:#f4f6f8;
+    font-family:'Segoe UI', Arial, sans-serif;
+">
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:40px 15px;">
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="
+                    max-width:600px;
+                    width:100%;
+                    background:#ffffff;
+                    border-radius:12px;
+                    overflow:hidden;
+                    box-shadow:0 8px 24px rgba(79,70,229,0.12);
+                ">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="
+                            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                            padding:44px 40px;
+                            text-align:center;
+                        ">
+
+                            <div style="
+                                width:64px;
+                                height:64px;
+                                background:rgba(255,255,255,0.15);
+                                border-radius:50%;
+                                margin:0 auto 16px;
+                                line-height:64px;
+                                font-size:30px;
+                            ">
+                                📨
+                            </div>
+
+                            <h1 style="
+                                margin:0;
+                                color:#ffffff;
+                                font-size:28px;
+                                font-weight:700;
+                            ">
+                                Verify Your Email
+                            </h1>
+
+                            <p style="
+                                margin:10px 0 0;
+                                color:rgba(255,255,255,0.9);
+                                font-size:15px;
+                            ">
+                                Welcome to NutriGenie!
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+
+                            <h2 style="
+                                margin:0 0 16px;
+                                color:#1f2937;
+                                font-size:22px;
+                                font-weight:600;
+                            ">
+                                Hello ${userName} 👋
+                            </h2>
+
+                            <p style="
+                                margin:0 0 16px;
+                                color:#4b5563;
+                                font-size:16px;
+                                line-height:1.7;
+                            ">
+                                Thank you for registering with
+                                <strong style="color:#4f46e5;">NutriGenie</strong>.
+                            </p>
+
+                            <p style="
+                                margin:0 0 28px;
+                                color:#4b5563;
+                                font-size:16px;
+                                line-height:1.7;
+                            ">
+                                Please use the verification code below to verify
+                                your email address:
+                            </p>
+
+                            <!-- Verification Code -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="center" style="
+                                        background:#f5f3ff;
+                                        border:2px dashed #c4b5fd;
+                                        border-radius:10px;
+                                        padding:24px;
+                                    ">
+
+                                        <p style="
+                                            margin:0 0 10px;
+                                            color:#6b7280;
+                                            font-size:13px;
+                                            text-transform:uppercase;
+                                            letter-spacing:1.5px;
+                                            font-weight:600;
+                                        ">
+                                            Verification Code
+                                        </p>
+
+                                        <div style="
+                                            font-size:36px;
+                                            font-weight:700;
+                                            letter-spacing:10px;
+                                            color:#4f46e5;
+                                        ">
+                                            ${verificationCode}
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Expiry Notice -->
+                            <p style="
+                                margin:28px 0 0;
+                                padding:14px 16px;
+                                background:#fff7ed;
+                                border-radius:8px;
+                                color:#9a3412;
+                                font-size:14px;
+                                line-height:1.5;
+                            ">
+                                ⏰ <strong>This verification code will expire shortly.</strong>
+                                Please complete the verification process as soon as possible.
+                            </p>
+
+                            <p style="
+                                margin:28px 0 0;
+                                color:#6b7280;
+                                font-size:14px;
+                                line-height:1.6;
+                            ">
+                                If you did not create a NutriGenie account, you can
+                                safely ignore this email.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="
+                            background:#f9fafb;
+                            border-top:1px solid #e5e7eb;
+                            padding:24px 40px;
+                            text-align:center;
+                        ">
+
+                            <p style="
+                                margin:0 0 8px;
+                                color:#374151;
+                                font-size:14px;
+                                font-weight:600;
+                            ">
+                                The NutriGenie Team 💜
+                            </p>
+
+                            <p style="
+                                margin:0;
+                                color:#9ca3af;
+                                font-size:12px;
+                                line-height:1.5;
+                            ">
+                                This is an automated email. Please do not reply to this message.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
+`;
+
+    // Example: Nodemailer
+    const mailOptions = {
+        from: `"NutriGenie" <${process.env.EMAIL_USER}>`,
+        to: userEmail,
+        subject: subject,
+        text: text,
+        html: html
+    };
+
+    await transporter.sendMail(mailOptions);
+}
+
+
 async function sendRegisterationEmail(userEmail, userName) {
     // const to = userEmail ;
     const subject = 'Welcome to NutriGenie! 🎉';
@@ -259,4 +494,4 @@ async function sendLoginEmail(userEmail, userName, loginDetails = {}) {
     await sendEmail(userEmail, subject, text, html);
 }
 
-module.exports = { sendRegisterationEmail, sendLoginEmail } ;
+module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail }; ;

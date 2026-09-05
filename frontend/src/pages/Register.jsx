@@ -42,8 +42,10 @@ const Register = () => {
     };
 
     try {
-      await register(data);
-      navigate('/dashboard');
+      const result = await register(data);
+      // Registration no longer logs the user in directly — send them to
+      // enter the code that was just emailed to them.
+      navigate('/verify-email', { state: { email: result.email || data.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
