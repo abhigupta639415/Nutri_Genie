@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from 'axios';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Calendar, TrendingUp, Activity, Flame, Droplet, Moon, Plus, Smile, Save } from 'lucide-react';
 
 const Progress = () => {
   const [progressData, setProgressData] = useState(null);
+  const [dietStats, setDietStats] = useState(null);
   const [period, setPeriod] = useState('week');
   const [loading, setLoading] = useState(true);
   const [showLogForm, setShowLogForm] = useState(false);
@@ -25,8 +27,14 @@ const Progress = () => {
   const fetchProgress = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:3001/api/progress/summary?period=${period}`);
-      setProgressData(response.data);
+      const [progRes, dietRes] = await Promise.all([
+        axios.get(`http://localhost:3001/api/progress/summary?period=${period}`),
+        axios.get(`http://localhost:3001/api/diet/progress-stats`).catch(() => null)
+      ]);
+      setProgressData(progRes.data);
+      if (dietRes && dietRes.data) {
+        setDietStats(dietRes.data);
+      }
     } catch (error) {
       console.error('Error fetching progress:', error);
     } finally {
@@ -132,6 +140,39 @@ const Progress = () => {
             ))}
           </div>
         </div>
+        
+        {/* Diet Progress Summary Banner */}
+        {dietStats && dietStats.totalMeals > 0 && (
+          <div className="mb-8 glass-dark p-6 rounded-2xl border border-cyan-500/30 shadow-2xl animate-fade-in">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Activity className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white">Diet Plan Progress</h2>
+                  <p className="text-slate-400 font-medium">{dietStats.completedMealsCount} / {dietStats.totalMeals} meals completed</p>
+                </div>
+              </div>
+              <div className="flex-1 w-full max-w-md">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-300">Overall Progress</span>
+                  <span className="text-sm font-bold text-cyan-400">{dietStats.overallProgress}%</span>
+                </div>
+                <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${dietStats.overallProgress}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-slate-500 font-semibold">
+                  <span>{dietStats.completedDays} full days completed</span>
+                  <Link to="/diet" className="text-cyan-400 hover:text-cyan-300 transition-colors">View Plan &rarr;</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Log Progress Form */}
         {showLogForm && (

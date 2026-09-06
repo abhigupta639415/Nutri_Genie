@@ -217,6 +217,12 @@ const updateProfile = async (req, res) => {
       user.goal = req.body.goal || user.goal;
       user.activityLevel = req.body.activityLevel || user.activityLevel;
       user.dietaryPreference = req.body.dietaryPreference || user.dietaryPreference;
+      if (req.body.planDurationWeeks !== undefined) user.planDurationWeeks = req.body.planDurationWeeks;
+      if (req.body.planDurationDays !== undefined) user.planDurationDays = req.body.planDurationDays;
+      if (req.body.durationUnit !== undefined) user.durationUnit = req.body.durationUnit;
+      if (req.body.foodPreferences !== undefined) user.foodPreferences = req.body.foodPreferences;
+      if (req.body.allergies !== undefined) user.allergies = req.body.allergies;
+      if (req.body.mealsPerDay !== undefined) user.mealsPerDay = req.body.mealsPerDay;
 
       const updatedUser = await user.save();
       res.json(updatedUser);

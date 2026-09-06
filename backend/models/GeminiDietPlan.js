@@ -14,13 +14,11 @@ const daySchema = new mongoose.Schema({
   dayNumber: { type: Number, required: true },
   dayName: { type: String, required: true },
   meals: {
-    breakfast: { type: mealSchema, required: true },
-    lunch: { type: mealSchema, required: true },
-    dinner: { type: mealSchema, required: true },
-    snacks: { type: mealSchema, required: true },
+    type: mongoose.Schema.Types.Mixed, // Allows dynamic meal keys like pre_workout, etc.
+    default: {}
   },
   totalCalories: { type: Number, default: 0 },
-}, { _id: false });
+}, { _id: false, strict: false });
 
 // Schema for a single week
 const weekSchema = new mongoose.Schema({
@@ -34,16 +32,37 @@ const geminiDietPlanSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true,
   },
   // Hash of all settings — if it changes, plan must be regenerated
   settingsHash: {
     type: String,
     required: true,
   },
+  generationSource: {
+    type: String,
+    enum: ['gemini', 'fallback'],
+    default: 'gemini',
+  },
+  startDate: {
+    type: Date,
+    default: Date.now,
+  },
+  completedMeals: {
+    type: [String],
+    default: [],
+  },
   planDurationWeeks: {
     type: Number,
     required: true,
+  },
+  planDurationDays: {
+    type: Number,
+    default: 28,
+  },
+  durationUnit: {
+    type: String,
+    enum: ['weeks', 'days'],
+    default: 'weeks',
   },
   // The Gemini-generated plan
   plan: {

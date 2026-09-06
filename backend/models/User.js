@@ -149,6 +149,35 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ['vegetarian', 'non_vegetarian', 'vegan', 'diabetic_friendly']
   },
+  planDurationWeeks: {
+    type: Number,
+    default: 4,
+    min: 1,
+    max: 12
+  },
+  planDurationDays: {
+    type: Number,
+    default: 28,
+    min: 1,
+    max: 90
+  },
+  durationUnit: {
+    type: String,
+    enum: ['weeks', 'days'],
+    default: 'weeks'
+  },
+  foodPreferences: {
+    type: String,
+    default: ''
+  },
+  allergies: {
+    type: String,
+    default: ''
+  },
+  mealsPerDay: {
+    type: Number,
+    default: 4
+  },
   createdAt: {
     type: Date,
     default: Date.now

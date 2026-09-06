@@ -1,33 +1,111 @@
+const mongoose = require('mongoose');
 const { calculateBMR, calculateTDEE, calculateBMI, calculateTargetCalories, calculateMacros } = require('../utils/calculations');
-const { generateMealPlan, getAlternativeMeals } = require('../utils/dietGenerator');
+const GeminiDietPlan = require('../models/GeminiDietPlan');
 
-// @desc    Get personalized diet plan
-// @route   POST /api/diet/plan
+/**
+ * Robust helper: Find the user's diet plan in MongoDB.
+ * Checks by planId (if provided), by authenticated user ID (ObjectId and String),
+ * and falls back to raw collection query to prevent type-casting mismatches.
+ */
+const findUserDietPlan = async (user, planId = null) => {
+  const authenticatedUserId = user?._id ? user._id.toString() : null;
+  if (!authenticatedUserId) return { plan: null };
+
+  let plan = null;
+
+  // 1. If planId is provided and is a valid ObjectId, look up by planId first
+  if (planId && mongoose.Types.ObjectId.isValid(planId)) {
+    plan = await GeminiDietPlan.findById(planId);
+    if (plan) {
+      if (plan.userId.toString() !== authenticatedUserId) {
+        return { error: 'FORBIDDEN', message: 'Not authorized to access this diet plan' };
+      }
+      return { plan };
+    }
+  }
+
+  // 2. Look up by authenticated user ID (handles both ObjectId and String representations)
+  plan = await GeminiDietPlan.findOne({
+    $or: [
+      { userId: user._id },
+      { userId: authenticatedUserId }
+    ]
+  });
+  if (plan) return { plan };
+
+  // 3. Fallback: query native collection to bypass any Mongoose casting discrepancies
+  try {
+    const rawPlan = await GeminiDietPlan.collection.findOne({
+      $or: [
+        { userId: user._id },
+        { userId: authenticatedUserId },
+        ...(planId && mongoose.Types.ObjectId.isValid(planId) ? [{ _id: new mongoose.Types.ObjectId(planId) }] : [])
+      ]
+    });
+    if (rawPlan) {
+      plan = await GeminiDietPlan.findById(rawPlan._id);
+      if (plan) return { plan };
+    }
+  } catch (rawErr) {
+    console.warn('[Diet] Raw collection query fallback error:', rawErr.message);
+  }
+
+  return { plan: null };
+};
+
+// @desc    Get personalized diet metrics and plan
+// @route   GET /api/diet/plan
 // @access  Private
 const getDietPlan = async (req, res) => {
   try {
-    const { weight, height, age, gender, goal, activityLevel, dietaryPreference } = req.user;
+    const user = req.user;
+    const { weight, height, age, gender, goal, activityLevel, dietaryPreference } = user;
 
-    // Calculate BMR and TDEE
+    // Calculate fresh metrics
     const bmr = calculateBMR(weight, height, age, gender);
     const tdee = calculateTDEE(bmr, activityLevel);
     const targetCalories = calculateTargetCalories(tdee, goal);
-    const macros = calculateMacros(targetCalories, goal);
+    const macros = calculateMacros(targetCalories, goal, weight);
     const bmi = calculateBMI(weight, height);
 
-    // Generate meal plan
-    const mealPlan = generateMealPlan(targetCalories, macros, dietaryPreference);
+    // Look for user's Gemini-generated plan
+    const { plan: geminiPlan } = await findUserDietPlan(user);
 
+    if (geminiPlan) {
+      const planObj = geminiPlan.plan && geminiPlan.plan.toObject ? geminiPlan.plan.toObject() : (geminiPlan.plan || {});
+      planObj.id = geminiPlan._id.toString();
+      planObj._id = geminiPlan._id.toString();
+      planObj.userId = geminiPlan.userId.toString();
+
+      return res.json({
+        planId: geminiPlan._id.toString(),
+        id: geminiPlan._id.toString(),
+        _id: geminiPlan._id.toString(),
+        userId: geminiPlan.userId.toString(),
+        metrics: { bmr, tdee, targetCalories, bmi },
+        macros,
+        planDurationWeeks: geminiPlan.planDurationWeeks,
+        planDurationDays: geminiPlan.planDurationDays || (geminiPlan.planDurationWeeks * 7),
+        durationUnit: geminiPlan.durationUnit || 'weeks',
+        mealPlan: planObj,
+        plan: planObj,
+        completedMeals: geminiPlan.completedMeals || [],
+        tips: geminiPlan.tips || getDietTips(goal, dietaryPreference),
+        source: 'gemini',
+        generatedAt: geminiPlan.generatedAt,
+      });
+    }
+
+    // If not yet generated via Gemini, return metrics and let frontend initiate Gemini generation
     res.json({
-      metrics: {
-        bmr,
-        tdee,
-        targetCalories,
-        bmi
-      },
+      metrics: { bmr, tdee, targetCalories, bmi },
       macros,
-      mealPlan,
-      tips: getDietTips(goal, dietaryPreference)
+      planDurationWeeks: user.planDurationWeeks || 4,
+      planDurationDays: user.planDurationDays || 28,
+      durationUnit: user.durationUnit || 'weeks',
+      mealPlan: null,
+      tips: getDietTips(goal, dietaryPreference),
+      source: 'none',
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -39,12 +117,27 @@ const getDietPlan = async (req, res) => {
 // @access  Private
 const getAlternatives = async (req, res) => {
   try {
-    const { mealType } = req.params;
-    const { currentMeal } = req.query;
-    const { dietaryPreference } = req.user;
+    const user = req.user;
+    const { plan: geminiPlan } = await findUserDietPlan(user);
 
-    const alternatives = getAlternativeMeals(mealType, dietaryPreference, currentMeal);
-    res.json(alternatives);
+    if (geminiPlan && geminiPlan.plan && geminiPlan.plan.weeks) {
+      const { mealType } = req.params;
+      const { currentMeal } = req.query;
+      const collected = [];
+
+      // Collect distinct meals from the Gemini plan for that mealType
+      for (const week of geminiPlan.plan.weeks) {
+        for (const day of week.days || []) {
+          const m = day.meals?.[mealType];
+          if (m && m.name && m.name !== currentMeal && !collected.some(c => c.name === m.name)) {
+            collected.push(m);
+          }
+        }
+      }
+      return res.json(collected.slice(0, 3));
+    }
+
+    res.json([]);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -57,32 +150,286 @@ const getDietTips = (goal, dietaryPreference) => {
       'Stay in a caloric deficit',
       'Drink 8-10 glasses of water daily',
       'Eat protein-rich foods to preserve muscle',
-      'Avoid sugary drinks and processed foods'
+      'Avoid sugary drinks and processed foods',
     ],
     weight_gain: [
       'Eat in a caloric surplus',
       'Focus on nutrient-dense foods',
       'Include healthy fats like nuts and ghee',
-      'Eat frequent meals throughout the day'
+      'Eat frequent meals throughout the day',
     ],
     muscle_gain: [
       'Consume 1.6-2.2g protein per kg body weight',
       'Time your meals around workouts',
       'Include complex carbs for energy',
-      'Stay consistent with meal timing'
+      'Stay consistent with meal timing',
     ],
     maintenance: [
       'Balance your macronutrients',
       'Eat a variety of foods',
       'Stay hydrated',
-      'Listen to your body\'s hunger cues'
-    ]
+      "Listen to your body's hunger cues",
+    ],
   };
 
   return tips[goal] || tips.maintenance;
 };
 
+/**
+ * Helper: get the meal types for a specific plan day.
+ * Falls back to the standard 4 if the day structure cannot be resolved.
+ */
+const getMealTypesForDay = (plan, dayNum) => {
+  const weekIndex = Math.floor((dayNum - 1) / 7);
+  const dayIndex = (dayNum - 1) % 7;
+  const weeksArr = plan?.plan?.weeks || [];
+  const weekObj = weeksArr[weekIndex] || weeksArr[weekIndex % (weeksArr.length || 1)];
+  const dayObj = weekObj?.days?.[dayIndex];
+  if (dayObj?.meals) return Object.keys(dayObj.meals);
+  return ['breakfast', 'lunch', 'dinner', 'snacks'];
+};
+
+/**
+ * Calculate progress stats from a completed set and the plan document.
+ * Returns: { totalMeals, completedMealsCount, overallProgress, completedDays, totalDays }
+ */
+const calculateProgressStats = (plan, completedSet) => {
+  const totalDays = plan.planDurationDays || (plan.planDurationWeeks * 7);
+  let totalMeals = 0;
+  let completedDaysCount = 0;
+
+  for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    const dayMealTypes = getMealTypesForDay(plan, dayNum);
+    const dayTotal = dayMealTypes.length;
+    totalMeals += dayTotal;
+
+    const dayCompletedCount = dayMealTypes.filter(mt => completedSet.has(`day${dayNum}-${mt}`)).length;
+    if (dayCompletedCount === dayTotal && dayTotal > 0) completedDaysCount++;
+  }
+
+  const completedMealsCount = completedSet.size;
+  const overallProgress = totalMeals > 0 ? Math.round((completedMealsCount / totalMeals) * 100) : 0;
+
+  return { totalMeals, completedMealsCount, overallProgress, completedDays: completedDaysCount, totalDays };
+};
+
+// @desc    Toggle progress for a meal and return updated progress stats
+// @route   POST /api/diet/progress
+// @access  Private
+const updateProgress = async (req, res) => {
+  try {
+    const user = req.user;
+    const { key, planId, dayId, mealId, completed: requestedCompleted } = req.body;
+
+    const canonicalKey = key || (dayId && mealId ? `day${dayId}-${mealId}` : null);
+
+    if (!canonicalKey) {
+      return res.status(400).json({
+        success: false,
+        message: 'Meal key is required',
+        code: 'MISSING_KEY',
+      });
+    }
+
+    // Validate key format: must be day<N>-<mealType>
+    if (!/^day\d+-\w+$/.test(canonicalKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal key format. Expected: day<N>-<mealType>',
+        code: 'INVALID_KEY_FORMAT',
+      });
+    }
+
+    console.log("MEAL PROGRESS SAVE", {
+      authenticatedUserId: user?._id?.toString(),
+      planId,
+      dayId,
+      mealId,
+      completed: requestedCompleted,
+    });
+
+    const { plan, error, message } = await findUserDietPlan(user, planId);
+
+    console.log("DIET PLAN FOUND", {
+      planId: plan?._id?.toString(),
+      userId: plan?.userId?.toString(),
+    });
+
+    if (error === 'FORBIDDEN') {
+      return res.status(403).json({
+        success: false,
+        message: message || 'Not authorized to modify this diet plan',
+        code: 'FORBIDDEN',
+      });
+    }
+
+    if (!plan) {
+      console.warn('[Diet] updateProgress - No diet plan found for user:', {
+        authenticatedUserId: user?._id?.toString(),
+        requestedPlanId: planId,
+        requestedDayId: dayId,
+        requestedMealId: mealId,
+        key: canonicalKey,
+      });
+      return res.status(404).json({
+        success: false,
+        message: 'No diet plan found. Please generate a diet plan first.',
+        code: 'DIET_PLAN_NOT_FOUND',
+      });
+    }
+
+    // Toggle the meal completion
+    const completed = new Set(plan.completedMeals || []);
+    const wasCompleted = completed.has(canonicalKey);
+
+    let isNowCompleted;
+    if (typeof requestedCompleted === 'boolean') {
+      isNowCompleted = requestedCompleted;
+    } else {
+      isNowCompleted = !wasCompleted;
+    }
+
+    if (isNowCompleted) {
+      completed.add(canonicalKey);
+    } else {
+      completed.delete(canonicalKey);
+    }
+
+    const completedMealsArray = Array.from(completed);
+
+    // Persist using findByIdAndUpdate with $set
+    await GeminiDietPlan.findByIdAndUpdate(
+      plan._id,
+      { $set: { completedMeals: completedMealsArray } },
+      { new: true }
+    );
+
+    // Calculate full progress stats
+    const stats = calculateProgressStats(plan, completed);
+
+    // Calculate specific day progress
+    const dayNum = parseInt(dayId, 10) || (canonicalKey.match(/day(\d+)/)?.[1] ? parseInt(canonicalKey.match(/day(\d+)/)[1], 10) : 1);
+    const dayMealTypes = getMealTypesForDay(plan, dayNum);
+    const dayTotal = dayMealTypes.length;
+    const dayCompletedCount = dayMealTypes.filter(mt => completed.has(`day${dayNum}-${mt}`)).length;
+    const dayProgress = dayTotal > 0 ? Math.round((dayCompletedCount / dayTotal) * 100) : 0;
+
+    return res.json({
+      success: true,
+      mealCompleted: isNowCompleted,
+      completedMeals: completedMealsArray.length,
+      completedMealsList: completedMealsArray,
+      totalMeals: stats.totalMeals,
+      completedDays: stats.completedDays,
+      totalDays: stats.totalDays,
+      dayProgress,
+      overallProgress: stats.overallProgress,
+      planId: plan._id.toString(),
+      id: plan._id.toString(),
+    });
+  } catch (error) {
+    console.error('[Diet] updateProgress error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: 'SERVER_ERROR',
+    });
+  }
+};
+
+// @desc    Reset progress (clear all completed meals, reset startDate)
+// @route   POST /api/diet/reset
+// @access  Private
+const resetProgress = async (req, res) => {
+  try {
+    const user = req.user;
+    const { plan } = await findUserDietPlan(user);
+
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'No diet plan found',
+        code: 'DIET_PLAN_NOT_FOUND',
+      });
+    }
+
+    const newStartDate = new Date();
+    await GeminiDietPlan.findByIdAndUpdate(
+      plan._id,
+      { $set: { completedMeals: [], startDate: newStartDate } },
+      { new: true }
+    );
+
+    const stats = calculateProgressStats(plan, new Set());
+
+    res.json({
+      success: true,
+      message: 'Progress reset successfully',
+      completedMeals: 0,
+      completedMealsList: [],
+      startDate: newStartDate,
+      ...stats,
+      planId: plan._id.toString(),
+      id: plan._id.toString(),
+    });
+  } catch (error) {
+    console.error('[Diet] resetProgress error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: 'SERVER_ERROR',
+    });
+  }
+};
+
+// @desc    Get current diet progress stats without toggling anything
+// @route   GET /api/diet/progress-stats
+// @access  Private
+const getProgressStats = async (req, res) => {
+  try {
+    const user = req.user;
+    const { plan } = await findUserDietPlan(user);
+
+    if (!plan) {
+      return res.json({
+        hasPlan: false,
+        completedMeals: 0,
+        completedMealsList: [],
+        completedMealsCount: 0,
+        totalMeals: 0,
+        overallProgress: 0,
+        completedDays: 0,
+        totalDays: 0,
+      });
+    }
+
+    const completed = new Set(plan.completedMeals || []);
+    const stats = calculateProgressStats(plan, completed);
+
+    return res.json({
+      hasPlan: true,
+      planId: plan._id.toString(),
+      id: plan._id.toString(),
+      _id: plan._id.toString(),
+      completedMeals: plan.completedMeals?.length || 0,
+      completedMealsList: plan.completedMeals || [],
+      completedMealsCount: plan.completedMeals?.length || 0,
+      ...stats,
+    });
+  } catch (error) {
+    console.error('[Diet] getProgressStats error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: 'SERVER_ERROR',
+    });
+  }
+};
+
 module.exports = {
   getDietPlan,
-  getAlternatives
+  getAlternatives,
+  updateProgress,
+  resetProgress,
+  getProgressStats,
 };

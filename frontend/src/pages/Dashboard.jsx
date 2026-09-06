@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { Activity, Target, TrendingUp, Flame, Droplet, Moon, Calendar, Settings, Save, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
@@ -10,14 +11,18 @@ const Dashboard = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({
     goal: '',
     activityLevel: '',
     dietaryPreference: '',
+    foodPreferences: '',
+    allergies: '',
   });
-  const [planDuration, setPlanDuration] = useState(30);
+  const [selectedDuration, setSelectedDuration] = useState('weeks-4');
+  const [customDays, setCustomDays] = useState('');
 
   // Per-user duration key
   const getDurationKey = useCallback(() => {
@@ -32,31 +37,94 @@ const Dashboard = () => {
         goal: user.goal || 'maintenance',
         activityLevel: user.activityLevel || 'moderate',
         dietaryPreference: user.dietaryPreference || 'vegetarian',
+        foodPreferences: user.foodPreferences || '',
+        allergies: user.allergies || '',
       });
-      try {
-        const saved = localStorage.getItem(getDurationKey());
-        if (saved) setPlanDuration(parseInt(saved, 10));
-      } catch { /* keep default */ }
+      if (user.durationUnit === 'days' && user.planDurationDays === 30) {
+        setSelectedDuration('days-30');
+      } else if (user.planDurationWeeks) {
+        setSelectedDuration(`weeks-${user.planDurationWeeks}`);
+      } else {
+        setSelectedDuration('weeks-4');
+      }
     }
   }, [user, getDurationKey]);
 
   // Save settings handler
   const handleSaveSettings = async () => {
+    // 1. Validate customization
+    if (!settingsForm.goal || !settingsForm.activityLevel || !settingsForm.dietaryPreference) {
+      setSaveError('Please select a valid fitness goal, activity level, and dietary preference.');
+      return;
+    }
+
     setSaving(true);
     setSaveSuccess(false);
+    setSaveError(null);
     try {
+      let weeks = 4;
+      let days = 28;
+      let durationUnit = 'weeks';
+
+      if (selectedDuration.startsWith('weeks-')) {
+        weeks = parseInt(selectedDuration.split('-')[1], 10);
+        days = weeks * 7;
+        durationUnit = 'weeks';
+      } else if (selectedDuration === 'days-30') {
+        days = 30;
+        weeks = Math.ceil(30 / 7);
+        durationUnit = 'days';
+      } else if (selectedDuration === 'custom' && customDays) {
+        days = Math.max(1, Math.min(90, parseInt(customDays, 10) || 30));
+        weeks = Math.max(1, Math.min(12, Math.ceil(days / 7)));
+        durationUnit = 'days';
+      }
+
       await updateProfile({
         goal: settingsForm.goal,
         activityLevel: settingsForm.activityLevel,
         dietaryPreference: settingsForm.dietaryPreference,
+        foodPreferences: settingsForm.foodPreferences,
+        allergies: settingsForm.allergies,
+        planDurationWeeks: weeks,
+        planDurationDays: days,
+        durationUnit,
       });
-      localStorage.setItem(getDurationKey(), String(planDuration));
+
+      localStorage.setItem(getDurationKey(), String(days));
+
+      // Trigger Gemini diet plan generation dynamically
+      const genRes = await axios.post('http://localhost:3001/api/diet/generate', {
+        planDurationWeeks: weeks,
+        planDurationDays: days,
+        durationUnit,
+        foodPreferences: settingsForm.foodPreferences,
+        allergies: settingsForm.allergies,
+        forceRegenerate: true,
+      });
+
+      // Update dashboard state with newly calculated metrics & macros
+      if (genRes.data?.metrics && genRes.data?.macros) {
+        setStats(prev => ({
+          ...prev,
+          diet: {
+            ...prev?.diet,
+            metrics: genRes.data.metrics,
+            macros: genRes.data.macros,
+            planDurationWeeks: genRes.data.planDurationWeeks,
+            planDurationDays: genRes.data.planDurationDays,
+            mealPlan: genRes.data.plan,
+          }
+        }));
+      }
+
       await fetchDashboardData();
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setTimeout(() => setSaveSuccess(false), 5000);
     } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('Failed to save settings. Please try again.');
+      console.error('Error saving settings and generating plan:', error);
+      const errMsg = error.response?.data?.message || error.message || 'Please try again.';
+      setSaveError(errMsg);
     } finally {
       setSaving(false);
     }
@@ -250,44 +318,86 @@ const Dashboard = () => {
                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-2">📅 Plan Duration</label>
                   <select
-                    value={planDuration}
-                    onChange={(e) => setPlanDuration(parseInt(e.target.value, 10))}
+                    value={selectedDuration}
+                    onChange={(e) => setSelectedDuration(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="7">⚡ 1 Week (7 days)</option>
-                    <option value="14">🔥 2 Weeks (14 days)</option>
-                    <option value="30">💪 1 Month (30 days)</option>
-                    <option value="60">🏆 2 Months (60 days)</option>
-                    <option value="90">👑 3 Months (90 days)</option>
+                    <option value="weeks-1">⚡ 1 Week (7 days)</option>
+                    <option value="weeks-2">🔥 2 Weeks (14 days)</option>
+                    <option value="weeks-4">💪 4 Weeks (28 days)</option>
+                    <option value="weeks-8">🏋️ 8 Weeks (56 days)</option>
+                    <option value="weeks-12">👑 12 Weeks (84 days)</option>
+                    <option value="days-30">📅 30 Days (1 Month)</option>
+                    <option value="custom">⚙️ Custom Duration</option>
                   </select>
                 </div>
               </div>
 
+              {/* Custom Duration Input if selected */}
+              {selectedDuration === 'custom' && (
+                <div className="mt-4 p-4 bg-slate-800/50 border border-white/10 rounded-xl">
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Custom Duration (Days, 1–90)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    placeholder="e.g. 45 days"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-full sm:w-64 px-3 py-2 bg-slate-900 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              )}
+
+              {/* Preferences & Allergies */}
+              <div className="grid sm:grid-cols-2 gap-5 mt-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">🍛 Food Preferences (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. North Indian, High Protein, Oats, Paneer"
+                    value={settingsForm.foodPreferences}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, foodPreferences: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 font-medium focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">⚠️ Allergies / Restrictions (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Peanuts, Gluten, Dairy, Shellfish"
+                    value={settingsForm.allergies}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, allergies: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 font-medium focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm"
+                  />
+                </div>
+              </div>
+
               {/* Save Button */}
-              <div className="mt-6 flex items-center justify-between">
-                <p className="text-slate-500 text-sm">
-                  Changes will update your diet plan and calorie targets
+              <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                <p className="text-slate-400 text-sm">
+                  Changes will recalculate your target calories and generate a new diet plan.
                 </p>
                 <button
                   onClick={handleSaveSettings}
                   disabled={saving}
-                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg ${
+                  className={`flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all shadow-lg ${
                     saving
-                      ? 'bg-slate-600 cursor-not-allowed'
+                      ? 'bg-slate-700 text-slate-300 cursor-not-allowed opacity-90'
                       : saveSuccess
-                        ? 'bg-green-500 shadow-green-500/30'
-                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-purple-500/30'
+                        ? 'bg-green-600 shadow-green-500/30'
+                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-purple-500/30 hover:scale-[1.02]'
                   }`}
                 >
                   {saving ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Saving...
+                      Generating your personalized diet plan...
                     </>
                   ) : saveSuccess ? (
                     <>
                       <Sparkles className="w-5 h-5" />
-                      Saved!
+                      Your personalized diet plan is ready!
                     </>
                   ) : (
                     <>
@@ -297,6 +407,40 @@ const Dashboard = () => {
                   )}
                 </button>
               </div>
+
+              {/* Success Message Banner */}
+              {saveSuccess && (
+                <div className="mt-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between gap-3 text-green-300">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-green-400 shrink-0" />
+                    <span className="text-sm font-semibold">
+                      Your personalized diet plan is ready!
+                    </span>
+                  </div>
+                  <Link
+                    to="/diet"
+                    className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-xs rounded-lg transition-colors shadow"
+                  >
+                    View Diet Plan →
+                  </Link>
+                </div>
+              )}
+
+              {/* Error Message Banner */}
+              {saveError && (
+                <div className="mt-4 p-4 bg-red-500/15 border border-red-500/30 rounded-xl flex items-center justify-between gap-3 text-red-300">
+                  <div>
+                    <p className="text-sm font-bold text-red-300">Unable to generate your diet plan.</p>
+                    <p className="text-xs text-red-400/90 mt-0.5">Please try again. {saveError}</p>
+                  </div>
+                  <button
+                    onClick={handleSaveSettings}
+                    className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 font-bold text-xs rounded-lg transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
