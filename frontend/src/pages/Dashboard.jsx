@@ -1,12 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Activity, Target, TrendingUp, Flame, Droplet, Moon, Calendar } from 'lucide-react';
+import { Activity, Target, TrendingUp, Flame, Droplet, Moon, Calendar, Settings, Save, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Settings form state
+  const [settingsForm, setSettingsForm] = useState({
+    goal: '',
+    activityLevel: '',
+    dietaryPreference: '',
+  });
+  const [planDuration, setPlanDuration] = useState(30);
+
+  // Per-user duration key
+  const getDurationKey = useCallback(() => {
+    const userId = user?._id || user?.id || 'guest';
+    return `nutrigenie_plan_duration_${userId}`;
+  }, [user]);
+
+  // Initialize settings from user profile
+  useEffect(() => {
+    if (user) {
+      setSettingsForm({
+        goal: user.goal || 'maintenance',
+        activityLevel: user.activityLevel || 'moderate',
+        dietaryPreference: user.dietaryPreference || 'vegetarian',
+      });
+      try {
+        const saved = localStorage.getItem(getDurationKey());
+        if (saved) setPlanDuration(parseInt(saved, 10));
+      } catch { /* keep default */ }
+    }
+  }, [user, getDurationKey]);
+
+  // Save settings handler
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await updateProfile({
+        goal: settingsForm.goal,
+        activityLevel: settingsForm.activityLevel,
+        dietaryPreference: settingsForm.dietaryPreference,
+      });
+      localStorage.setItem(getDurationKey(), String(planDuration));
+      await fetchDashboardData();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -114,6 +168,137 @@ const Dashboard = () => {
             </div>
             <div className="text-sm text-slate-400 font-semibold">Your Goal</div>
           </div>
+        </div>
+
+        {/* ═══════════════ CUSTOMIZE YOUR PLAN ═══════════════ */}
+        <div className="mb-8 animate-slide-up">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-full glass-dark p-5 rounded-2xl border border-white/10 shadow-2xl hover:border-cyan-500/30 transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg shadow-cyan-500/20">
+                <Settings className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black text-white">Customize Your Plan</h3>
+                <p className="text-slate-400 text-sm">Change your goal, activity level, dietary preference & plan duration</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {saveSuccess && (
+                <span className="text-green-400 text-sm font-bold animate-fade-in">✓ Saved!</span>
+              )}
+              {showSettings ? (
+                <ChevronUp className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+              ) : (
+                <ChevronDown className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+              )}
+            </div>
+          </button>
+
+          {showSettings && (
+            <div className="mt-3 glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl animate-fade-in">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {/* Goal */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">🎯 Fitness Goal</label>
+                  <select
+                    value={settingsForm.goal}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, goal: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="weight_loss">🔥 Weight Loss</option>
+                    <option value="weight_gain">💪 Weight Gain</option>
+                    <option value="muscle_gain">🏋️ Muscle Gain</option>
+                    <option value="maintenance">⚖️ Maintenance</option>
+                  </select>
+                </div>
+
+                {/* Activity Level */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">🏃 Activity Level</label>
+                  <select
+                    value={settingsForm.activityLevel}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, activityLevel: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="sedentary">🪑 Sedentary</option>
+                    <option value="light">🚶 Light (1-3 days/week)</option>
+                    <option value="moderate">🏃 Moderate (4-5 days/week)</option>
+                    <option value="active">💪 Active (Daily)</option>
+                    <option value="very_active">🔥 Very Active (Intense)</option>
+                  </select>
+                </div>
+
+                {/* Dietary Preference */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">🥗 Diet Preference</label>
+                  <select
+                    value={settingsForm.dietaryPreference}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, dietaryPreference: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="vegetarian">🥬 Vegetarian</option>
+                    <option value="non_vegetarian">🍗 Non-Vegetarian</option>
+                    <option value="vegan">🌱 Vegan</option>
+                    <option value="diabetic_friendly">💊 Diabetic Friendly</option>
+                  </select>
+                </div>
+
+                {/* Plan Duration */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">📅 Plan Duration</label>
+                  <select
+                    value={planDuration}
+                    onChange={(e) => setPlanDuration(parseInt(e.target.value, 10))}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="7">⚡ 1 Week (7 days)</option>
+                    <option value="14">🔥 2 Weeks (14 days)</option>
+                    <option value="30">💪 1 Month (30 days)</option>
+                    <option value="60">🏆 2 Months (60 days)</option>
+                    <option value="90">👑 3 Months (90 days)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="mt-6 flex items-center justify-between">
+                <p className="text-slate-500 text-sm">
+                  Changes will update your diet plan and calorie targets
+                </p>
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={saving}
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg ${
+                    saving
+                      ? 'bg-slate-600 cursor-not-allowed'
+                      : saveSuccess
+                        ? 'bg-green-500 shadow-green-500/30'
+                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-purple-500/30'
+                  }`}
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Saving...
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Metabolic Info */}
