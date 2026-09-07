@@ -223,6 +223,7 @@ const updateProfile = async (req, res) => {
       if (req.body.foodPreferences !== undefined) user.foodPreferences = req.body.foodPreferences;
       if (req.body.allergies !== undefined) user.allergies = req.body.allergies;
       if (req.body.mealsPerDay !== undefined) user.mealsPerDay = req.body.mealsPerDay;
+      if (req.body.planStartDate !== undefined) user.planStartDate = req.body.planStartDate;
 
       const updatedUser = await user.save();
       res.json(updatedUser);

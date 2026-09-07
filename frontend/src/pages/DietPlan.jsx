@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,7 @@ import {
   Sparkles,
   RefreshCw,
   RotateCcw,
+  Lock,
 } from 'lucide-react';
 
 import { resolveMealImage, SLOT_DEFAULTS } from '../utils/mealImageResolver';
@@ -227,12 +228,6 @@ const DietPlan = () => {
     await fetchDietPlan(false, weeks, days, 'days');
   };
 
-  const getDayNameForDay = (day) => {
-    const dayIndex = ((day - 1) % 7) + 1;
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    return days[dayIndex - 1] || `Day ${day}`;
-  };
-
   const getMealForDay = (day, mealType) => {
     const plan = dietData?.plan || dietData?.mealPlan;
     if (!plan) return null;
@@ -268,6 +263,42 @@ const DietPlan = () => {
     return ['breakfast', 'lunch', 'dinner', 'snacks'];
   };
 
+  const rawStartDate = dietData?.startDate || dietData?.planStartDate || user?.planStartDate;
+  const planStartDate = useMemo(() => {
+    return rawStartDate ? new Date(rawStartDate) : new Date();
+  }, [rawStartDate]);
+
+  const getDayCalendarDate = useCallback(
+    (dayNumber) => {
+      const base = new Date(planStartDate);
+      base.setHours(0, 0, 0, 0);
+      const d = new Date(base);
+      d.setDate(base.getDate() + (dayNumber - 1));
+      return d;
+    },
+    [planStartDate]
+  );
+
+  const getDayStatus = useCallback(
+    (dayNumber) => {
+      const dayDate = getDayCalendarDate(dayNumber);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const targetTime = dayDate.getTime();
+      const todayTime = today.getTime();
+
+      if (targetTime === todayTime) {
+        return { status: 'today', date: dayDate };
+      }
+      if (targetTime > todayTime) {
+        return { status: 'future', date: dayDate };
+      }
+      return { status: 'past', date: dayDate };
+    },
+    [getDayCalendarDate]
+  );
+
   const isMealCompleted = (day, mealType) => {
     return completedMeals.has(`day${day}-${mealType}`);
   };
@@ -277,6 +308,12 @@ const DietPlan = () => {
   };
 
   const toggleMealComplete = async (day, mealType) => {
+    const { status: dayStatus } = getDayStatus(day);
+    if (dayStatus !== 'today') {
+      // Interactivity gated: only today is markable
+      return;
+    }
+
     const key = `day${day}-${mealType}`;
     if (togglingMeals.has(key)) return;
 
@@ -299,6 +336,7 @@ const DietPlan = () => {
         mealId: mealType,
         dayId: day,
         completed: !wasCompleted,
+        clientDate: new Date().toISOString(),
       });
 
       const serverList = Array.isArray(res.data.completedMealsList)
@@ -362,9 +400,9 @@ const DietPlan = () => {
     } catch (e) {}
     try {
       const res = await axios.post('http://localhost:3001/api/diet/reset');
-      if (dietData) {
+      if (res.data?.startDate) {
         setDietData((prev) =>
-          prev ? { ...prev, startDate: res.data.startDate, completedMeals: [] } : prev
+          prev ? { ...prev, startDate: res.data.startDate, planStartDate: res.data.startDate, completedMeals: [] } : prev
         );
       }
     } catch (err) {
@@ -671,7 +709,16 @@ const DietPlan = () => {
         {weekDays.map((day) => {
           const dayProgress = getDayProgress(day);
           const isFullyComplete = dayProgress === 100;
-          const dayName = getDayNameForDay(day);
+          const { status: dayStatus, date: dayCalendarDate } = getDayStatus(day);
+          const isToday = dayStatus === 'today';
+          const isFuture = dayStatus === 'future';
+          const isPast = dayStatus === 'past';
+
+          const formattedDate = dayCalendarDate.toLocaleDateString('en-IN', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+          });
 
           return (
             <motion.div
@@ -686,6 +733,8 @@ const DietPlan = () => {
                   className={`p-4 sm:p-5 flex items-center justify-between ${
                     isFullyComplete
                       ? 'bg-emerald-500/10 border-b border-emerald-500/20'
+                      : isFuture
+                      ? 'bg-slate-100/30 dark:bg-slate-800/20 border-b border-slate-200/50 dark:border-white/5 opacity-85'
                       : 'bg-slate-100/60 dark:bg-slate-800/40 border-b border-slate-200/80 dark:border-white/5'
                   }`}
                 >
@@ -694,20 +743,49 @@ const DietPlan = () => {
                       className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
                         isFullyComplete
                           ? 'bg-emerald-500 text-white'
+                          : isFuture
+                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
                           : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'
                       }`}
                     >
-                      {isFullyComplete ? <Check className="w-5 h-5" /> : `D${day}`}
+                      {isFullyComplete ? (
+                        <Check className="w-5 h-5" />
+                      ) : isFuture ? (
+                        <Lock className="w-4 h-4" />
+                      ) : (
+                        `D${day}`
+                      )}
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <span>Day {day}</span>
-                        <span className="text-xs font-medium text-slate-400">• {dayName}</span>
+                        <span className="text-xs font-medium text-slate-400">• {formattedDate}</span>
+                        {isToday && (
+                          <Badge variant="accent" size="sm">
+                            Today
+                          </Badge>
+                        )}
+                        {isFuture && (
+                          <Badge variant="secondary" size="sm" className="opacity-75">
+                            Upcoming
+                          </Badge>
+                        )}
+                        {isPast && (
+                          <Badge variant="secondary" size="sm" className="opacity-60">
+                            Past
+                          </Badge>
+                        )}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {isFullyComplete
-                          ? '✨ All meal slots completed!'
-                          : 'Tap on meal cards below to log'}
+                        {isToday
+                          ? isFullyComplete
+                            ? '✨ All meal slots completed!'
+                            : 'Tap on meal cards below to log'
+                          : isFuture
+                          ? `🔒 Unlocks on ${formattedDate}`
+                          : isFullyComplete
+                          ? '✨ All meal slots completed'
+                          : 'Past day • Read-only'}
                       </p>
                     </div>
                   </div>
@@ -733,26 +811,40 @@ const DietPlan = () => {
                     const isToggling = isMealToggling(day, mealType);
                     const imageUrl = meal?.image || getMealImage(mealType, meal?.name);
 
+                    // Dynamic styling based on today vs future vs past
+                    let cardClasses = 'group relative rounded-2xl overflow-hidden border transition-all ';
+                    if (isFuture) {
+                      cardClasses +=
+                        'opacity-55 grayscale-[25%] bg-slate-50/50 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-white/10 cursor-not-allowed select-none';
+                    } else if (isPast) {
+                      cardClasses += isCompleted
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-500/30 cursor-default select-none'
+                        : 'bg-slate-50/70 dark:bg-slate-900/60 border-slate-200/70 dark:border-white/10 cursor-default select-none';
+                    } else {
+                      // isToday
+                      cardClasses += isCompleted
+                        ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/30 cursor-pointer'
+                        : 'bg-white dark:bg-slate-900/80 border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 shadow-sm cursor-pointer';
+                    }
+
+                    if (isToggling) cardClasses += ' opacity-60 cursor-wait';
+
                     return (
                       <motion.div
                         key={mealType}
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => toggleMealComplete(day, mealType)}
-                        className={`group relative rounded-2xl overflow-hidden border transition-all cursor-pointer ${
-                          isCompleted
-                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/30'
-                            : 'bg-white dark:bg-slate-900/80 border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 shadow-sm'
-                        } ${isToggling ? 'opacity-60 cursor-wait' : ''}`}
+                        whileHover={isToday ? { y: -3 } : undefined}
+                        whileTap={isToday ? { scale: 0.98 } : undefined}
+                        onClick={isToday ? () => toggleMealComplete(day, mealType) : undefined}
+                        className={cardClasses}
                       >
                         {/* Food Image Container */}
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800">
                           <img
                             src={imageUrl}
                             alt={meal?.name}
-                            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                              isCompleted ? 'saturate-75 opacity-70' : ''
-                            }`}
+                            className={`w-full h-full object-cover transition-transform duration-500 ${
+                              isToday ? 'group-hover:scale-105' : ''
+                            } ${isCompleted ? 'saturate-75 opacity-70' : ''}`}
                             loading="lazy"
                             onError={(e) => {
                               e.target.onerror = null;
@@ -760,6 +852,16 @@ const DietPlan = () => {
                             }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+
+                          {/* Future locked overlay */}
+                          {isFuture && (
+                            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+                              <span className="px-2.5 py-1 rounded-full bg-slate-900/80 text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/10 shadow-lg">
+                                <Lock className="w-3 h-3 text-amber-400" />
+                                Locked
+                              </span>
+                            </div>
+                          )}
 
                           {/* Meal Type Pill */}
                           <div className="absolute top-2.5 left-2.5">
@@ -775,6 +877,8 @@ const DietPlan = () => {
                               className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-md ${
                                 isCompleted
                                   ? 'bg-emerald-500 text-white'
+                                  : isFuture
+                                  ? 'bg-slate-900/60 text-slate-500 border border-white/10'
                                   : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-400 group-hover:text-cyan-500 border border-slate-200 dark:border-white/20'
                               }`}
                             >
@@ -801,7 +905,9 @@ const DietPlan = () => {
                             className={`text-xs sm:text-sm font-bold leading-snug line-clamp-2 ${
                               isCompleted
                                 ? 'line-through text-slate-400 dark:text-slate-500'
-                                : 'text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+                                : isToday
+                                ? 'text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+                                : 'text-slate-700 dark:text-slate-300'
                             }`}
                           >
                             {meal?.name}
@@ -811,10 +917,22 @@ const DietPlan = () => {
                             <span>Carbs: {meal?.carbs || 45}g</span>
                             <span
                               className={`font-semibold ${
-                                isCompleted ? 'text-emerald-500' : 'text-slate-400'
+                                isCompleted
+                                  ? 'text-emerald-500'
+                                  : isFuture
+                                  ? 'text-amber-500/90 dark:text-amber-400/90'
+                                  : isToday
+                                  ? 'text-cyan-600 dark:text-cyan-400'
+                                  : 'text-slate-400'
                               }`}
                             >
-                              {isCompleted ? '✓ Completed' : 'Tap to log'}
+                              {isCompleted
+                                ? '✓ Completed'
+                                : isFuture
+                                ? `Unlocks on ${dayCalendarDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`
+                                : isToday
+                                ? 'Tap to log'
+                                : 'Not logged'}
                             </span>
                           </div>
                         </div>

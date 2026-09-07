@@ -439,8 +439,9 @@ const generateDietPlan = async (req, res) => {
         return res.json({
           source: 'cache',
           planId: cached._id,
-        generationSource: cached.generationSource || 'gemini',
-          startDate: cached.startDate,
+          generationSource: cached.generationSource || 'gemini',
+          startDate: cached.startDate || user.planStartDate || new Date(),
+          planStartDate: cached.startDate || user.planStartDate || new Date(),
           completedMeals: cached.completedMeals || [],
           planDurationWeeks: cached.planDurationWeeks,
           planDurationDays: cached.planDurationDays || (cached.planDurationWeeks * 7),
@@ -515,7 +516,8 @@ const generateDietPlan = async (req, res) => {
             _id: existing._id.toString(),
             userId: existing.userId.toString(),
             generationSource: existing.generationSource || 'gemini',
-            startDate: existing.startDate,
+            startDate: existing.startDate || user.planStartDate || new Date(),
+            planStartDate: existing.startDate || user.planStartDate || new Date(),
             completedMeals: existing.completedMeals || [],
             planDurationWeeks: existing.planDurationWeeks,
             planDurationDays: existing.planDurationDays || (existing.planDurationWeeks * 7),
@@ -563,7 +565,13 @@ const generateDietPlan = async (req, res) => {
       }, 'startDate');
       if (existingForDate && existingForDate.startDate) {
         startDate = existingForDate.startDate;
+      } else if (user.planStartDate) {
+        startDate = user.planStartDate;
       }
+    }
+
+    if (forceRegenerate || !user.planStartDate) {
+      await User.findByIdAndUpdate(user._id, { planStartDate: startDate });
     }
 
     // ── 8. Save to DB (upsert) — use $set for ALL fields to avoid conflicts ─
@@ -605,6 +613,7 @@ const generateDietPlan = async (req, res) => {
       userId: savedPlan.userId.toString(),
       generationSource,
       startDate,
+      planStartDate: startDate,
       completedMeals: [],
       planDurationWeeks: weeks,
       planDurationDays: days,
@@ -758,7 +767,8 @@ const getCachedPlan = async (req, res) => {
         _id: cached._id.toString(),
         userId: cached.userId.toString(),
         generationSource: cached.generationSource,
-        startDate: cached.startDate,
+        startDate: cached.startDate || user.planStartDate || new Date(),
+        planStartDate: cached.startDate || user.planStartDate || new Date(),
         completedMeals: cached.completedMeals || [],
         planDurationWeeks: cached.planDurationWeeks,
         planDurationDays: cached.planDurationDays || (cached.planDurationWeeks * 7),

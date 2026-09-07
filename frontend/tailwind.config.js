@@ -45,12 +45,24 @@ module.exports = {
           900: '#14532d',
         },
         surface: {
-          dark: '#090d16',
-          'dark-card': 'rgba(15, 23, 42, 0.65)',
+          dark: '#0B0F19',
+          'dark-card': '#161B2E',
+          'dark-card-soft': '#1B2138',
           'dark-border': 'rgba(255, 255, 255, 0.08)',
           light: '#f8fafc',
           'light-card': 'rgba(255, 255, 255, 0.85)',
           'light-border': 'rgba(226, 232, 240, 0.8)',
+        },
+        violet: {
+          400: '#948bf3',
+          500: '#7C6FF0',
+          600: '#6758ea',
+          700: '#5342d8',
+        },
+        nutrition: {
+          400: '#34D399',
+          500: '#10B981',
+          600: '#059669',
         },
       },
       fontSize: {

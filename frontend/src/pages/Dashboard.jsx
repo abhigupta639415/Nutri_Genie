@@ -20,6 +20,8 @@ import {
   Lightbulb,
   Check,
   ArrowRight,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, Badge, AnimatedCounter, Skeleton } from '../components/ui';
 
@@ -57,6 +59,62 @@ const Dashboard = () => {
   });
   const [selectedDuration, setSelectedDuration] = useState('weeks-4');
   const [customDays, setCustomDays] = useState('');
+
+  // Inline weight editing state
+  const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [weightInput, setWeightInput] = useState('');
+  const [savingWeight, setSavingWeight] = useState(false);
+  const [weightError, setWeightError] = useState('');
+
+  const getWeightCaption = () => {
+    const userId = user?._id || user?.id;
+    const localUpdated = userId ? localStorage.getItem(`nutrigenie_weight_last_updated_${userId}`) : null;
+    const dateToUse = localUpdated || (user?.updatedAt && user?.createdAt && (new Date(user.updatedAt).getTime() - new Date(user.createdAt).getTime() > 2000) ? user.updatedAt : null);
+
+    if (dateToUse) {
+      const d = new Date(dateToUse);
+      return `Last updated ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
+    }
+    return 'Recorded at onboarding';
+  };
+
+  const handleStartEditWeight = () => {
+    setWeightInput(user?.weight ? String(user.weight) : '');
+    setWeightError('');
+    setIsEditingWeight(true);
+  };
+
+  const handleCancelEditWeight = () => {
+    setIsEditingWeight(false);
+    setWeightError('');
+  };
+
+  const handleSaveWeight = async (e) => {
+    if (e) e.preventDefault();
+    const val = parseFloat(weightInput);
+    if (isNaN(val) || val < 20 || val > 300) {
+      setWeightError('Enter weight between 20 and 300 kg');
+      return;
+    }
+
+    setSavingWeight(true);
+    setWeightError('');
+    try {
+      await updateProfile({ weight: val });
+      const userId = user?._id || user?.id;
+      if (userId) {
+        localStorage.setItem(`nutrigenie_weight_last_updated_${userId}`, new Date().toISOString());
+      }
+      // Refetch /api/diet/plan and summary so all derived metrics update immediately
+      await fetchDashboardData();
+      setIsEditingWeight(false);
+    } catch (err) {
+      console.error('Failed to update weight:', err);
+      setWeightError(err.response?.data?.message || 'Failed to update weight');
+    } finally {
+      setSavingWeight(false);
+    }
+  };
 
   // Per-user duration key
   const getDurationKey = useCallback(() => {
@@ -258,17 +316,72 @@ const Dashboard = () => {
         {/* Metric 1: Weight */}
         <Card hoverEffect className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Current Weight
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Current Weight
+              </span>
+              {!isEditingWeight && (
+                <button
+                  type="button"
+                  onClick={handleStartEditWeight}
+                  title="Edit current weight"
+                  aria-label="Edit current weight"
+                  className="p-1 rounded-md text-slate-400 hover:text-cyan-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            <AnimatedCounter value={user?.weight || 0} decimals={1} suffix=" kg" />
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1 font-medium">Recorded at onboarding</p>
+
+          {isEditingWeight ? (
+            <form onSubmit={handleSaveWeight} className="space-y-2 py-0.5">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="20"
+                  max="300"
+                  autoFocus
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  className="w-24 px-2 py-1 text-lg font-black rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+                <span className="text-sm font-bold text-slate-500">kg</span>
+                <button
+                  type="submit"
+                  disabled={savingWeight}
+                  title="Save weight"
+                  aria-label="Save weight"
+                  className="p-1.5 rounded-lg bg-cyan-500 text-white hover:bg-cyan-600 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEditWeight}
+                  disabled={savingWeight}
+                  title="Cancel"
+                  aria-label="Cancel"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {weightError && (
+                <p className="text-[10px] text-rose-500 font-medium">{weightError}</p>
+              )}
+            </form>
+          ) : (
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter value={user?.weight || 0} decimals={1} suffix=" kg" />
+            </div>
+          )}
+
+          <p className="text-[11px] text-slate-400 mt-1 font-medium">{getWeightCaption()}</p>
         </Card>
 
         {/* Metric 2: BMI */}

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const User = require('../models/User');
 const { calculateBMR, calculateTDEE, calculateBMI, calculateTargetCalories, calculateMacros } = require('../utils/calculations');
 const GeminiDietPlan = require('../models/GeminiDietPlan');
 const { generateWeeklyMealPlan, getAlternativeMeals: getDietGeneratorAlternatives } = require('../utils/dietGenerator');
@@ -93,6 +94,8 @@ const getDietPlan = async (req, res) => {
         completedMeals: geminiPlan.completedMeals || [],
         tips: geminiPlan.tips || getDietTips(goal, dietaryPreference),
         source: 'gemini',
+        startDate: geminiPlan.startDate || user.planStartDate || new Date(),
+        planStartDate: geminiPlan.startDate || user.planStartDate || new Date(),
         generatedAt: geminiPlan.generatedAt,
       });
     }
@@ -101,13 +104,14 @@ const getDietPlan = async (req, res) => {
     const planDurationWeeks = user.planDurationWeeks || 4;
     const planDurationDays = user.planDurationDays || (planDurationWeeks * 7);
     const weeklyPlan = generateWeeklyMealPlan(targetCalories, macros, dietaryPreference || 'vegetarian', planDurationDays, { goal });
+    const initialStartDate = user.planStartDate || new Date();
 
     try {
       const savedPlan = await GeminiDietPlan.create({
         userId: user._id,
         settingsHash: 'initial_' + user._id,
         generationSource: 'nutritionist_engine',
-        startDate: new Date(),
+        startDate: initialStartDate,
         completedMeals: [],
         planDurationWeeks,
         planDurationDays,
@@ -118,6 +122,10 @@ const getDietPlan = async (req, res) => {
         tips: getDietTips(goal, dietaryPreference),
         generatedAt: new Date(),
       });
+
+      if (!user.planStartDate) {
+        await User.findByIdAndUpdate(user._id, { planStartDate: initialStartDate });
+      }
 
       return res.json({
         planId: savedPlan._id.toString(),
@@ -134,6 +142,8 @@ const getDietPlan = async (req, res) => {
         completedMeals: [],
         tips: getDietTips(goal, dietaryPreference),
         source: 'nutritionist_engine',
+        startDate: savedPlan.startDate,
+        planStartDate: savedPlan.startDate,
         generatedAt: savedPlan.generatedAt,
       });
     } catch (saveErr) {
@@ -365,6 +375,35 @@ const updateProgress = async (req, res) => {
       });
     }
 
+    // Calculate specific day progress and validate that only today is markable
+    const dayNum = parseInt(dayId, 10) || (canonicalKey.match(/day(\d+)/)?.[1] ? parseInt(canonicalKey.match(/day(\d+)/)[1], 10) : 1);
+    const planStartDate = currentPlan.startDate || user.planStartDate || new Date();
+    const anchor = new Date(planStartDate);
+    anchor.setHours(0, 0, 0, 0);
+
+    const clientNow = req.body.clientDate ? new Date(req.body.clientDate) : new Date();
+    const today = new Date(clientNow);
+    today.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
+    const currentDayNum = Math.max(1, diffDays + 1);
+
+    if (dayNum > currentDayNum) {
+      return res.status(400).json({
+        success: false,
+        message: `Day ${dayNum} is locked. You can only log meals for today (Day ${currentDayNum}).`,
+        code: 'FUTURE_DAY',
+      });
+    }
+
+    if (dayNum < currentDayNum) {
+      return res.status(400).json({
+        success: false,
+        message: `Day ${dayNum} is in the past and is read-only.`,
+        code: 'PAST_DAY',
+      });
+    }
+
     // Toggle the meal completion
     const completed = new Set(currentPlan.completedMeals || []);
     const wasCompleted = completed.has(canonicalKey);
@@ -394,8 +433,6 @@ const updateProgress = async (req, res) => {
     // Calculate full progress stats
     const stats = calculateProgressStats(currentPlan, completed);
 
-    // Calculate specific day progress
-    const dayNum = parseInt(dayId, 10) || (canonicalKey.match(/day(\d+)/)?.[1] ? parseInt(canonicalKey.match(/day(\d+)/)[1], 10) : 1);
     const dayMealTypes = getMealTypesForDay(currentPlan, dayNum);
     const dayTotal = dayMealTypes.length;
     const dayCompletedCount = dayMealTypes.filter(mt => completed.has(`day${dayNum}-${mt}`)).length;
@@ -447,6 +484,8 @@ const resetProgress = async (req, res) => {
       { new: true }
     );
 
+    await User.findByIdAndUpdate(user._id, { planStartDate: newStartDate });
+
     const stats = calculateProgressStats(plan, new Set());
 
     res.json({
@@ -455,6 +494,7 @@ const resetProgress = async (req, res) => {
       completedMeals: 0,
       completedMealsList: [],
       startDate: newStartDate,
+      planStartDate: newStartDate,
       ...stats,
       planId: plan._id.toString(),
       id: plan._id.toString(),

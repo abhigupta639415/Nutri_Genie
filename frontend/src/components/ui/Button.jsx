@@ -4,11 +4,15 @@ import { Loader2 } from 'lucide-react';
 
 const variantClasses = {
   primary:
-    'bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 text-white hover:from-cyan-400 hover:via-teal-400 hover:to-indigo-500 shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 border border-cyan-400/20',
+    'bg-[#7C6FF0] text-white hover:bg-[#6858e8] shadow-md shadow-[#7C6FF0]/25 hover:shadow-lg hover:shadow-[#7C6FF0]/35 border border-[#7C6FF0]/30',
+  violet:
+    'bg-[#7C6FF0] text-white hover:bg-[#6858e8] shadow-md shadow-[#7C6FF0]/25 hover:shadow-lg hover:shadow-[#7C6FF0]/35 border border-[#7C6FF0]/30',
+  nutrition:
+    'bg-[#10B981] text-white hover:bg-[#059669] shadow-md shadow-[#10B981]/25 hover:shadow-lg hover:shadow-[#10B981]/35 border border-[#10B981]/30',
   accent:
     'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 border border-emerald-400/20',
   secondary:
-    'bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800/80 dark:text-slate-100 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-white/10 shadow-sm',
+    'bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-[#161B2E] dark:text-slate-100 dark:hover:bg-[#1f2640] border border-slate-200 dark:border-white/[0.08] shadow-sm',
   outline:
     'border border-cyan-500/50 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 dark:hover:bg-cyan-500/15',
   ghost:

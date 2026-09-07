@@ -1,26 +1,59 @@
 const Progress = require('../models/Progress');
+const User = require('../models/User');
 
-// @desc    Log daily progress
+// @desc    Log daily progress (upserts if today's entry already exists)
 // @route   POST /api/progress
 // @access  Private
 const logProgress = async (req, res) => {
   try {
     const { caloriesConsumed, caloriesBurned, weight, waterIntake, sleepHours, mood, workoutsCompleted, mealsLogged } = req.body;
 
-    const progress = await Progress.create({
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Look for an existing progress entry for today
+    let progress = await Progress.findOne({
       userId: req.user._id,
-      date: new Date(),
-      caloriesConsumed,
-      caloriesBurned,
-      weight,
-      waterIntake,
-      sleepHours,
-      mood,
-      workoutsCompleted,
-      mealsLogged
+      date: { $gte: startOfDay, $lte: endOfDay }
     });
 
-    res.status(201).json(progress);
+    if (progress) {
+      // Update existing entry for today
+      if (caloriesConsumed !== undefined) progress.caloriesConsumed = Number(caloriesConsumed);
+      if (caloriesBurned !== undefined) progress.caloriesBurned = Number(caloriesBurned);
+      if (weight !== undefined) progress.weight = Number(weight);
+      if (waterIntake !== undefined) progress.waterIntake = Number(waterIntake);
+      if (sleepHours !== undefined) progress.sleepHours = Number(sleepHours);
+      if (mood) progress.mood = mood;
+      if (workoutsCompleted) progress.workoutsCompleted = workoutsCompleted;
+      if (mealsLogged) progress.mealsLogged = mealsLogged;
+      progress.date = now;
+      await progress.save();
+    } else {
+      // Create new entry for today
+      progress = await Progress.create({
+        userId: req.user._id,
+        date: now,
+        caloriesConsumed: Number(caloriesConsumed) || 0,
+        caloriesBurned: Number(caloriesBurned) || 0,
+        weight: Number(weight),
+        waterIntake: Number(waterIntake) || 0,
+        sleepHours: Number(sleepHours) || 0,
+        mood: mood || 'okay',
+        workoutsCompleted: workoutsCompleted || [],
+        mealsLogged: mealsLogged || []
+      });
+    }
+
+    // Atomically update req.user's weight on the User document itself
+    if (weight !== undefined && !isNaN(weight) && Number(weight) > 0) {
+      await User.findByIdAndUpdate(req.user._id, { weight: Number(weight) });
+    }
+
+    res.status(200).json(progress);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -76,8 +109,20 @@ const getProgressSummary = async (req, res) => {
       date: { $gte: startDate }
     }).sort({ date: 1 });
 
+    // Check if today already has an entry
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayEntry = await Progress.findOne({
+      userId: req.user._id,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
     if (progressData.length === 0) {
-      return res.json({ message: 'No progress data available' });
+      return res.json({ message: 'No progress data available', todayEntry: todayEntry || null });
     }
 
     // Calculate summary statistics
@@ -97,15 +142,40 @@ const getProgressSummary = async (req, res) => {
 
     res.json({
       summary,
+      todayEntry: todayEntry || null,
       chartData: progressData.map(p => ({
+        _id: p._id,
         date: p.date,
         caloriesConsumed: p.caloriesConsumed,
         caloriesBurned: p.caloriesBurned,
         weight: p.weight,
         waterIntake: p.waterIntake,
-        sleepHours: p.sleepHours
+        sleepHours: p.sleepHours,
+        mood: p.mood
       }))
     });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// @desc    Get today's progress entry if already logged
+// @route   GET /api/progress/today
+// @access  Private
+const getTodayProgress = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayEntry = await Progress.findOne({
+      userId: req.user._id,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    res.json(todayEntry || null);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -127,5 +197,6 @@ const calculateStreak = (progressData) => {
 module.exports = {
   logProgress,
   getProgress,
-  getProgressSummary
+  getProgressSummary,
+  getTodayProgress
 };

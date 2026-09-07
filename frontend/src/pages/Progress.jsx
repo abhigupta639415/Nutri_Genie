@@ -21,7 +21,9 @@ import {
   Moon,
   Plus,
   Save,
+  Edit3,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { Button, Card, CardHeader, CardTitle, Badge, Modal, EmptyState, AnimatedCounter, Skeleton } from '../components/ui';
 
 // Custom Recharts Tooltip matching design system
@@ -56,12 +58,14 @@ const CustomChartTooltip = ({ active, payload, label }) => {
 };
 
 const Progress = () => {
+  const { user, updateProfile } = useAuth();
   const [progressData, setProgressData] = useState(null);
   const [dietStats, setDietStats] = useState(null);
   const [period, setPeriod] = useState('week');
   const [loading, setLoading] = useState(true);
   const [showLogForm, setShowLogForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [todayEntry, setTodayEntry] = useState(null);
   const [formData, setFormData] = useState({
     caloriesConsumed: '',
     caloriesBurned: '',
@@ -86,6 +90,25 @@ const Progress = () => {
       if (dietRes && dietRes.data) {
         setDietStats(dietRes.data);
       }
+
+      if (progRes.data?.todayEntry) {
+        const today = progRes.data.todayEntry;
+        setTodayEntry(today);
+        setFormData({
+          caloriesConsumed: today.caloriesConsumed ?? '',
+          caloriesBurned: today.caloriesBurned ?? '',
+          weight: today.weight ?? '',
+          waterIntake: today.waterIntake ?? '',
+          sleepHours: today.sleepHours ?? '',
+          mood: today.mood || 'okay',
+        });
+      } else {
+        setTodayEntry(null);
+        setFormData((prev) => ({
+          ...prev,
+          weight: user?.weight ? String(user.weight) : prev.weight || '',
+        }));
+      }
     } catch (error) {
       console.error('Error fetching progress:', error);
     } finally {
@@ -107,12 +130,14 @@ const Progress = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const newWeight = parseFloat(formData.weight);
+
       await axios.post(
         'http://localhost:3001/api/progress',
         {
           caloriesConsumed: parseInt(formData.caloriesConsumed, 10) || 0,
           caloriesBurned: parseInt(formData.caloriesBurned, 10) || 0,
-          weight: parseFloat(formData.weight),
+          weight: newWeight,
           waterIntake: parseFloat(formData.waterIntake) || 0,
           sleepHours: parseFloat(formData.sleepHours) || 0,
           mood: formData.mood,
@@ -122,16 +147,21 @@ const Progress = () => {
         }
       );
 
-      setFormData({
-        caloriesConsumed: '',
-        caloriesBurned: '',
-        weight: '',
-        waterIntake: '',
-        sleepHours: '',
-        mood: 'okay',
-      });
+      // Atomically sync updated weight to AuthContext so Dashboard and all derived metrics update immediately
+      if (!isNaN(newWeight) && newWeight > 0) {
+        try {
+          await updateProfile({ weight: newWeight });
+          const userId = user?._id || user?.id;
+          if (userId) {
+            localStorage.setItem(`nutrigenie_weight_last_updated_${userId}`, new Date().toISOString());
+          }
+        } catch (profileErr) {
+          console.warn('Failed to update user profile weight:', profileErr);
+        }
+      }
+
       setShowLogForm(false);
-      fetchProgress();
+      await fetchProgress();
     } catch (error) {
       console.error('Error logging progress:', error);
       alert('Failed to log progress. Please verify inputs.');
@@ -200,9 +230,9 @@ const Progress = () => {
             variant="accent"
             size="md"
             onClick={() => setShowLogForm(true)}
-            leftIcon={Plus}
+            leftIcon={todayEntry ? Edit3 : Plus}
           >
-            Log Today
+            {todayEntry ? "Edit Today's Entry" : "Log Today"}
           </Button>
         </div>
       </div>
@@ -497,8 +527,8 @@ const Progress = () => {
       <Modal
         isOpen={showLogForm}
         onClose={() => setShowLogForm(false)}
-        title="Log Today's Health Metrics"
-        description="Record your weight, nutrition, hydration, and recovery."
+        title={todayEntry ? "Edit Today's Health Metrics" : "Log Today's Health Metrics"}
+        description={todayEntry ? "Update your logged metrics for today." : "Record your weight, nutrition, hydration, and recovery."}
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleSubmitProgress} className="space-y-4 pt-2">
@@ -612,7 +642,7 @@ const Progress = () => {
               isLoading={saving}
               leftIcon={Save}
             >
-              Save Metrics
+              {todayEntry ? 'Update Metrics' : 'Save Metrics'}
             </Button>
           </div>
         </form>
