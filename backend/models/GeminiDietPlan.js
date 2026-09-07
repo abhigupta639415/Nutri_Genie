@@ -40,7 +40,7 @@ const geminiDietPlanSchema = new mongoose.Schema({
   },
   generationSource: {
     type: String,
-    enum: ['gemini', 'fallback'],
+    enum: ['gemini', 'fallback', 'nutritionist_engine'],
     default: 'gemini',
   },
   startDate: {

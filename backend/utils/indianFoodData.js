@@ -1,101 +1,279 @@
-// Indian food database with nutritional information
+// ══════════════════════════════════════════════════════════════════════════════
+// INDIAN FOOD DATABASE — NUTRITIONIST GRADE
+// Rich multi-regional dataset covering North, South, East, West, and Central India.
+// Each dish includes calories, macros (P/C/F), serving size, region, and nutritional tags.
+// ══════════════════════════════════════════════════════════════════════════════
+
 const indianFoods = {
+  // ────────────────────────────────────────────────────────────────────────────
+  // 1. VEGETARIAN (Pure Veg, Lacto-Vegetarian)
+  // ────────────────────────────────────────────────────────────────────────────
   vegetarian: {
     breakfast: [
-      { name: 'Poha', calories: 250, protein: 6, carbs: 45, fats: 5, serving: '1 bowl' },
-      { name: 'Upma', calories: 220, protein: 5, carbs: 40, fats: 4, serving: '1 bowl' },
-      { name: 'Idli (3 pcs) with Sambar', calories: 200, protein: 8, carbs: 38, fats: 2, serving: '3 idlis' },
-      { name: 'Dosa with Chutney', calories: 280, protein: 7, carbs: 48, fats: 6, serving: '1 dosa' },
-      { name: 'Paratha with Curd', calories: 300, protein: 8, carbs: 42, fats: 10, serving: '2 parathas' },
-      { name: 'Oats Porridge', calories: 180, protein: 6, carbs: 32, fats: 3, serving: '1 bowl' },
-      { name: 'Besan Chilla', calories: 200, protein: 10, carbs: 25, fats: 6, serving: '2 chillas' }
+      { name: 'Moong Dal Cheela with Mint Chutney & Paneer Bhurji Filling', calories: 290, protein: 16, carbs: 32, fats: 9, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'low_gi'] },
+      { name: 'Poha with Roasted Peanuts, Curry Leaves & Lemon', calories: 280, protein: 7, carbs: 46, fats: 7, serving: '1 medium bowl', region: 'West', tags: ['light', 'comfort'] },
+      { name: 'Idli (3 pcs) with Drumstick Sambar & Tomato Chutney', calories: 230, protein: 9, carbs: 42, fats: 3, serving: '3 idlis + 1 cup sambar', region: 'South', tags: ['fermented', 'light', 'low_fat'] },
+      { name: 'Besan Chilla with Grated Paneer & Green Chutney', calories: 270, protein: 14, carbs: 28, fats: 10, serving: '2 chillas', region: 'North', tags: ['high_protein'] },
+      { name: 'Oats Vegetable Upma with Peas, Carrots & Mustard Tempering', calories: 240, protein: 7, carbs: 38, fats: 6, serving: '1 bowl', region: 'South', tags: ['fiber_rich', 'low_gi'] },
+      { name: 'Ragi Dosa with Coconut-Tomato Chutney & Sambar', calories: 260, protein: 8, carbs: 42, fats: 5, serving: '2 dosas', region: 'South', tags: ['millets', 'low_gi'] },
+      { name: 'Methi Thepla with Fresh Curd & Green Chilli Pickle', calories: 310, protein: 10, carbs: 44, fats: 9, serving: '2 theplas', region: 'West', tags: ['comfort'] },
+      { name: 'Sprouted Moong & Boiled Kala Chana Chaat', calories: 220, protein: 13, carbs: 34, fats: 3, serving: '1 large bowl', region: 'Pan-Indian', tags: ['high_protein', 'raw', 'light'] },
+      { name: 'Aloo Paratha (Low Oil) with Thick Greek Curd', calories: 380, protein: 11, carbs: 54, fats: 12, serving: '2 parathas', region: 'North', tags: ['heavy_carb', 'comfort'] },
+      { name: 'Pesarattu (Green Gram Dosa) with Allam Ginger Chutney', calories: 270, protein: 12, carbs: 40, fats: 5, serving: '2 dosas', region: 'South', tags: ['high_protein', 'fermented'] },
+      { name: 'Sattu Stuffed Paratha with Roasted Tomato Chokha', calories: 340, protein: 14, carbs: 48, fats: 8, serving: '2 parathas', region: 'East', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'Daliya (Broken Wheat) Khichdi with Mixed Veggies & Curd', calories: 260, protein: 9, carbs: 44, fats: 5, serving: '1 bowl', region: 'North', tags: ['fiber_rich', 'comfort'] },
+      { name: 'Khaman Dhokla with Mint Chutney', calories: 210, protein: 7, carbs: 36, fats: 4, serving: '3 square pieces', region: 'West', tags: ['fermented', 'light', 'low_fat'] },
+      { name: 'Paneer Bhurji on 2 Slices Whole Wheat Multigrain Toast', calories: 340, protein: 19, carbs: 30, fats: 14, serving: '2 toasts', region: 'North', tags: ['high_protein'] },
+      { name: 'Semolina (Rava) Uttapam with Bell Peppers & Coconut Chutney', calories: 290, protein: 8, carbs: 46, fats: 7, serving: '2 small uttapams', region: 'South', tags: ['comfort'] },
+      { name: 'Bajra Roti with Low-Fat Curd & Garlic Chutney', calories: 270, protein: 8, carbs: 45, fats: 6, serving: '2 rotis', region: 'West', tags: ['millets', 'low_gi'] },
+      { name: 'Oats & Apple Porridge with Walnuts & Cinnamon', calories: 280, protein: 8, carbs: 46, fats: 7, serving: '1 bowl', region: 'Pan-Indian', tags: ['fiber_rich', 'light'] },
+      { name: 'Misal (Light Sprouts Curry) with 1 Brown Bread Pav', calories: 320, protein: 12, carbs: 48, fats: 8, serving: '1 bowl + 1 pav', region: 'West', tags: ['high_protein'] },
     ],
     lunch: [
-      { name: 'Dal Rice', calories: 350, protein: 12, carbs: 65, fats: 5, serving: '1 plate' },
-      { name: 'Rajma Chawal', calories: 400, protein: 15, carbs: 70, fats: 6, serving: '1 plate' },
-      { name: 'Chole Bhature', calories: 550, protein: 15, carbs: 85, fats: 15, serving: '2 bhature' },
-      { name: 'Veg Pulao with Raita', calories: 380, protein: 10, carbs: 68, fats: 8, serving: '1 plate' },
-      { name: 'Paneer Butter Masala with Roti', calories: 450, protein: 18, carbs: 52, fats: 16, serving: '1 plate' },
-      { name: 'Khichdi with Kadhi', calories: 320, protein: 11, carbs: 58, fats: 6, serving: '1 plate' },
-      { name: 'Veg Biryani', calories: 420, protein: 12, carbs: 72, fats: 10, serving: '1 plate' }
+      { name: 'Dal Tadka, Steamed Brown Rice, Lauki Sabzi & Cucumber Raita', calories: 480, protein: 17, carbs: 74, fats: 10, serving: '1 Thali', region: 'North', tags: ['comfort', 'balanced'] },
+      { name: 'Rajma Masala with Steamed Basmati Rice & Onion Kachumber', calories: 520, protein: 19, carbs: 82, fats: 9, serving: '1 plate', region: 'North', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'Palak Paneer (Low Cream), 2 Phulkas & Mixed Dal', calories: 470, protein: 21, carbs: 46, fats: 18, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Chole Masala with 2 Whole Wheat Bhature & Onion Slaw', calories: 590, protein: 18, carbs: 84, fats: 18, serving: '1 plate', region: 'North', tags: ['heavy_carb', 'comfort'] },
+      { name: 'South Indian Sambar Rice with Beetroot Poriyal & Roasted Appalam', calories: 450, protein: 13, carbs: 78, fats: 7, serving: '1 Thali', region: 'South', tags: ['fiber_rich', 'balanced'] },
+      { name: 'Paneer Bhurji (150g), 2 Multigrain Rotis & Boondi Raita', calories: 510, protein: 24, carbs: 44, fats: 20, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Gujarati Khichdi with Kadhi & Roasted Papad', calories: 420, protein: 14, carbs: 68, fats: 8, serving: '1 bowl', region: 'West', tags: ['light', 'comfort', 'gut_health'] },
+      { name: 'Vegetable Hyderabadi Biryani with Cucumber Mint Raita', calories: 530, protein: 15, carbs: 82, fats: 12, serving: '1 bowl', region: 'South', tags: ['flavor_rich', 'comfort'] },
+      { name: 'Dal Makhani (Light Home Style) with Jeera Rice & 2 Rotis', calories: 550, protein: 18, carbs: 76, fats: 15, serving: '1 plate', region: 'North', tags: ['comfort'] },
+      { name: 'Soya Chunks Matar Masala with 3 Phulkas & Green Salad', calories: 460, protein: 28, carbs: 54, fats: 10, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Bengali Chholar Dal with Coconut, 2 Luchi & Aloo Dum', calories: 560, protein: 15, carbs: 78, fats: 18, serving: '1 plate', region: 'East', tags: ['heavy_carb', 'comfort'] },
+      { name: 'Kadhi Pakora with Steamed Rice & Stir-Fried Bhindi', calories: 490, protein: 14, carbs: 72, fats: 14, serving: '1 plate', region: 'North', tags: ['comfort'] },
+      { name: 'Matar Paneer with 2 Tawa Rotis & Tomato Cucumber Salad', calories: 490, protein: 20, carbs: 48, fats: 18, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Black Eyed Peas (Lobia) Curry with Brown Rice & Sprout Salad', calories: 470, protein: 18, carbs: 72, fats: 9, serving: '1 plate', region: 'Pan-Indian', tags: ['fiber_rich', 'high_protein'] },
+      { name: 'Maharashtra Pithla Bhakri with Thecha & Raw Onion', calories: 480, protein: 15, carbs: 74, fats: 11, serving: '2 jowar bhakris + pithla', region: 'West', tags: ['millets', 'fiber_rich'] },
+      { name: 'Mixed Vegetable Sambar, Avial & Steamed Brown Rice', calories: 460, protein: 14, carbs: 70, fats: 12, serving: '1 plate', region: 'South', tags: ['balanced', 'fiber_rich'] },
+      { name: 'Baingan Bharta, 3 Jowar Rotis & Yellow Moong Dal', calories: 440, protein: 16, carbs: 68, fats: 9, serving: '1 plate', region: 'West', tags: ['millets', 'low_gi'] },
+      { name: 'Methi Malai Paneer (Low Oil) with 2 Rotis & Salad', calories: 500, protein: 22, carbs: 45, fats: 20, serving: '1 plate', region: 'North', tags: ['high_protein'] },
     ],
     dinner: [
-      { name: 'Roti with Sabzi', calories: 300, protein: 10, carbs: 50, fats: 7, serving: '3 rotis' },
-      { name: 'Palak Paneer with Roti', calories: 380, protein: 16, carbs: 45, fats: 14, serving: '1 plate' },
-      { name: 'Dal Tadka with Jeera Rice', calories: 360, protein: 13, carbs: 62, fats: 6, serving: '1 plate' },
-      { name: 'Aloo Gobi with Roti', calories: 320, protein: 9, carbs: 55, fats: 8, serving: '1 plate' },
-      { name: 'Mix Veg Curry with Roti', calories: 340, protein: 11, carbs: 58, fats: 7, serving: '1 plate' }
+      { name: 'Yellow Moong Dal Khichdi with Cow Ghee (1 tsp) & Roasted Curd', calories: 380, protein: 14, carbs: 58, fats: 8, serving: '1 bowl', region: 'North', tags: ['light', 'comfort', 'digestive'] },
+      { name: 'Tandoori Paneer Tikka (150g) with Mint Chutney & Green Salad', calories: 360, protein: 23, carbs: 14, fats: 18, serving: '6 tikka cubes', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: '2 Soft Phulkas, Toor Dal Tadka & Dry Bhindi Masala', calories: 370, protein: 13, carbs: 54, fats: 9, serving: '1 plate', region: 'North', tags: ['light', 'balanced'] },
+      { name: 'Palak Dal with 2 Multigrain Phulkas & Beetroot Salad', calories: 360, protein: 15, carbs: 52, fats: 8, serving: '1 plate', region: 'North', tags: ['fiber_rich', 'light'] },
+      { name: 'Mixed Vegetable Clear Soup with 2 Slices Toasted Multigrain Bread', calories: 290, protein: 8, carbs: 44, fats: 6, serving: '1 bowl + 2 bread', region: 'Pan-Indian', tags: ['light', 'digestive'] },
+      { name: 'Kashmiri Dum Aloo (Mild) with 2 Rotis & Cucumber Slices', calories: 390, protein: 10, carbs: 58, fats: 11, serving: '1 plate', region: 'North', tags: ['comfort'] },
+      { name: 'Lauki Kofta Curry (Air-Fried) with 2 Phulkas & Moong Dal', calories: 360, protein: 14, carbs: 50, fats: 9, serving: '1 plate', region: 'North', tags: ['light', 'low_cal'] },
+      { name: 'Curd Rice with Pomegranate, Mustard Seeds & Pickle', calories: 340, protein: 9, carbs: 52, fats: 8, serving: '1 bowl', region: 'South', tags: ['gut_health', 'light', 'fermented'] },
+      { name: 'Stir-Fried Paneer & Broccoli Bowl with Roasted Jeera', calories: 340, protein: 22, carbs: 16, fats: 16, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'low_carb'] },
+      { name: 'Foxtail Millet Khichdi with Vegetables & Tadka', calories: 350, protein: 11, carbs: 54, fats: 7, serving: '1 bowl', region: 'South', tags: ['millets', 'low_gi'] },
+      { name: 'Masoor Dal with 2 Phulkas & Gobi Aloo Dry', calories: 380, protein: 15, carbs: 56, fats: 8, serving: '1 plate', region: 'North', tags: ['balanced', 'light'] },
+      { name: 'Besan Tomato Cheela with Mint Coriander Dip', calories: 310, protein: 13, carbs: 36, fats: 9, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'light'] },
+      { name: 'Grilled Paneer Salad with Roasted Flaxseeds & Lemon Dressing', calories: 350, protein: 21, carbs: 15, fats: 17, serving: '1 large bowl', region: 'Pan-Indian', tags: ['high_protein', 'low_carb'] },
+      { name: 'Mixed Vegetable Dalia with Curd & Carrot Salad', calories: 330, protein: 10, carbs: 52, fats: 7, serving: '1 bowl', region: 'North', tags: ['fiber_rich', 'light'] },
+      { name: 'Roti (2), Chana Dal & Cabbage Poriyal', calories: 370, protein: 14, carbs: 54, fats: 8, serving: '1 plate', region: 'South', tags: ['balanced'] },
     ],
     snacks: [
-      { name: 'Sprouts Chaat', calories: 150, protein: 8, carbs: 25, fats: 2, serving: '1 bowl' },
-      { name: 'Fruit Salad', calories: 120, protein: 2, carbs: 30, fats: 1, serving: '1 bowl' },
-      { name: 'Roasted Makhana', calories: 100, protein: 3, carbs: 18, fats: 2, serving: '1 cup' },
-      { name: 'Dhokla', calories: 160, protein: 5, carbs: 28, fats: 3, serving: '2 pieces' },
-      { name: 'Masala Chai with Biscuits', calories: 140, protein: 3, carbs: 24, fats: 4, serving: '1 cup + 2 biscuits' }
+      { name: 'Roasted Spiced Makhana (Fox Nuts)', calories: 120, protein: 4, carbs: 20, fats: 2, serving: '1 large bowl (35g)', region: 'North', tags: ['light', 'crunchy', 'low_fat'] },
+      { name: 'Roasted Kala Chana (Black Chickpeas)', calories: 150, protein: 9, carbs: 22, fats: 3, serving: '40g', region: 'North', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'Sprouted Green Moong Salad with Lemon & Rock Salt', calories: 140, protein: 9, carbs: 22, fats: 1, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'raw'] },
+      { name: 'Masala Buttermilk (Chaas) with Roasted Jeera', calories: 75, protein: 4, carbs: 8, fats: 2, serving: '1 large glass (250ml)', region: 'Pan-Indian', tags: ['gut_health', 'light', 'hydration'] },
+      { name: 'Grilled Paneer Cubes (60g) with Chaat Masala', calories: 160, protein: 11, carbs: 3, fats: 11, serving: '4 cubes', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: 'Cucumber & Carrot Slices with Roasted Peanut Mint Dip', calories: 110, protein: 4, carbs: 12, fats: 5, serving: '1 bowl', region: 'Pan-Indian', tags: ['low_cal', 'fiber_rich'] },
+      { name: 'Dhokla (2 pcs) with Coriander Chutney', calories: 140, protein: 5, carbs: 24, fats: 2, serving: '2 pieces', region: 'West', tags: ['fermented', 'light'] },
+      { name: 'Roasted Sunflower & Pumpkin Seeds Mix', calories: 160, protein: 7, carbs: 6, fats: 12, serving: '25g', region: 'Pan-Indian', tags: ['healthy_fats'] },
+      { name: 'Boiled Sweet Corn Chaat with Green Chillies & Lime', calories: 130, protein: 4, carbs: 26, fats: 2, serving: '1 bowl', region: 'Pan-Indian', tags: ['fiber_rich', 'light'] },
+      { name: 'Apple Slices with 1 tbsp Pure Peanut Butter', calories: 170, protein: 5, carbs: 22, fats: 8, serving: '1 apple + 1 tbsp dip', region: 'Pan-Indian', tags: ['energizing'] },
+      { name: 'Almonds (10) & Walnuts (2 halves)', calories: 150, protein: 5, carbs: 5, fats: 13, serving: 'handful', region: 'Pan-Indian', tags: ['brain_food', 'healthy_fats'] },
+      { name: 'Dry Bhel with Murmura, Roasted Chana, Onions & Lemon', calories: 135, protein: 4, carbs: 26, fats: 2, serving: '1 bowl', region: 'West', tags: ['light', 'low_fat'] },
     ]
   },
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 2. NON-VEGETARIAN (Chicken, Fish, Eggs, Mutton + Wholesome Veg)
+  // ────────────────────────────────────────────────────────────────────────────
   non_vegetarian: {
     breakfast: [
-      { name: 'Egg Bhurji with Toast', calories: 280, protein: 18, carbs: 30, fats: 10, serving: '2 eggs' },
-      { name: 'Boiled Eggs with Upma', calories: 300, protein: 20, carbs: 38, fats: 8, serving: '2 eggs' },
-      { name: 'Chicken Keema Paratha', calories: 400, protein: 25, carbs: 45, fats: 12, serving: '2 parathas' }
+      { name: 'Egg Bhurji (3 eggs, 1 yolk) with 2 Multigrain Toasts', calories: 340, protein: 24, carbs: 26, fats: 12, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Chicken Keema Paratha (Tawa Roasted) with Fresh Curd', calories: 420, protein: 26, carbs: 44, fats: 14, serving: '2 parathas', region: 'North', tags: ['high_protein', 'comfort'] },
+      { name: 'Masala Omelette (2 eggs) with Sautéed Mushrooms & Spinach', calories: 260, protein: 18, carbs: 8, fats: 16, serving: '1 omelette', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: 'Boiled Eggs (3 whites, 1 whole) with Rawa Upma', calories: 310, protein: 21, carbs: 36, fats: 7, serving: '1 plate', region: 'South', tags: ['high_protein', 'balanced'] },
+      { name: 'Egg Dosa with Spicy Coconut Chutney & Tomato Rasam', calories: 320, protein: 16, carbs: 40, fats: 8, serving: '2 dosas', region: 'South', tags: ['high_protein', 'fermented'] },
+      { name: 'Chicken Seekh Kebab Roll in Whole Wheat Phulka', calories: 370, protein: 27, carbs: 34, fats: 11, serving: '1 roll', region: 'North', tags: ['high_protein'] },
+      { name: 'Anda Bhurji Pav (2 whole eggs, 1 brown pav) with Onions', calories: 350, protein: 18, carbs: 32, fats: 15, serving: '1 plate', region: 'West', tags: ['high_protein', 'comfort'] },
+      { name: 'Egg White Scramble with Moong Dal Cheela', calories: 290, protein: 24, carbs: 28, fats: 6, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Shredded Chicken Poha with Peanuts & Coriander', calories: 330, protein: 22, carbs: 42, fats: 8, serving: '1 plate', region: 'West', tags: ['high_protein', 'balanced'] },
+      { name: 'Egg Appam (2) with Mild Vegetable Stew', calories: 310, protein: 15, carbs: 40, fats: 8, serving: '2 appams', region: 'South', tags: ['fermented', 'light'] },
+      { name: 'Smoked Chicken Breast Sandwich with Mint Yogurt Spread', calories: 360, protein: 31, carbs: 30, fats: 9, serving: '2 multigrain sandwiches', region: 'Pan-Indian', tags: ['high_protein', 'lean_protein'] },
+      { name: '3 Hard Boiled Eggs with Salt & Pepper + 1 Banana', calories: 280, protein: 20, carbs: 28, fats: 10, serving: '3 eggs + fruit', region: 'Pan-Indian', tags: ['high_protein', 'natural'] },
+      { name: 'Egg Paratha (Stuffed) with Fresh Curd & Pickle', calories: 390, protein: 19, carbs: 45, fats: 13, serving: '2 parathas', region: 'North', tags: ['comfort'] },
+      { name: 'Chicken Tikka Omelette with 1 Brown Bread Slice', calories: 330, protein: 29, carbs: 16, fats: 14, serving: '1 plate', region: 'North', tags: ['high_protein'] },
     ],
     lunch: [
-      { name: 'Chicken Curry with Rice', calories: 500, protein: 35, carbs: 60, fats: 12, serving: '1 plate' },
-      { name: 'Fish Curry with Rice', calories: 450, protein: 32, carbs: 58, fats: 10, serving: '1 plate' },
-      { name: 'Egg Biryani', calories: 480, protein: 22, carbs: 68, fats: 14, serving: '1 plate' },
-      { name: 'Chicken Tikka with Roti', calories: 420, protein: 38, carbs: 42, fats: 10, serving: '1 plate' }
+      { name: 'Homestyle Chicken Curry with Steamed Rice, Dal & Salad', calories: 540, protein: 38, carbs: 62, fats: 12, serving: '1 Thali', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Bengali Macher Jhol (Rohu Fish Curry) with Steamed Rice', calories: 480, protein: 34, carbs: 64, fats: 9, serving: '1 plate', region: 'East', tags: ['lean_protein', 'omega3', 'light'] },
+      { name: 'Grilled Tandoori Chicken (200g), 2 Phulkas & Green Salad', calories: 460, protein: 44, carbs: 36, fats: 12, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Chicken Biryani (Dum Style) with Mint Onion Raita', calories: 580, protein: 32, carbs: 74, fats: 14, serving: '1 bowl', region: 'South', tags: ['flavor_rich', 'comfort'] },
+      { name: 'Mangalorean Fish Curry with Brown Rice & Cabbage Upkari', calories: 490, protein: 33, carbs: 58, fats: 11, serving: '1 plate', region: 'South', tags: ['lean_protein', 'omega3'] },
+      { name: 'Egg Curry (3 Eggs) with 2 Rotis, Dal Fry & Salad', calories: 480, protein: 26, carbs: 48, fats: 18, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Chicken Tikka Masala (Low Cream), 2 Phulkas & Jeera Rice', calories: 560, protein: 40, carbs: 54, fats: 16, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Mutton Curry (Lean Cut) with 2 Rotis & Onion Raita', calories: 570, protein: 36, carbs: 42, fats: 22, serving: '1 plate', region: 'North', tags: ['high_protein', 'iron_rich'] },
+      { name: 'Chicken Chettinad with Steamed Rice & Pepper Rasam', calories: 530, protein: 37, carbs: 60, fats: 13, serving: '1 plate', region: 'South', tags: ['high_protein', 'spice_rich'] },
+      { name: 'Goan Fish Curry with Coconut Milk & Steamed Rice', calories: 510, protein: 31, carbs: 62, fats: 14, serving: '1 plate', region: 'West', tags: ['omega3', 'flavor_rich'] },
+      { name: 'Chicken Keema Matar with 3 Soft Rotis & Kachumber', calories: 510, protein: 35, carbs: 50, fats: 14, serving: '1 plate', region: 'North', tags: ['high_protein'] },
+      { name: 'Egg Biryani (2 Eggs) with Cucumber Raita & Roasted Papad', calories: 510, protein: 22, carbs: 70, fats: 13, serving: '1 bowl', region: 'South', tags: ['high_protein', 'comfort'] },
+      { name: 'Chicken Saagwala (Spinach Chicken) with 2 Phulkas', calories: 470, protein: 39, carbs: 38, fats: 14, serving: '1 plate', region: 'North', tags: ['high_protein', 'iron_rich'] },
+      { name: 'Fish Fry (Tawa Pomfret) with Dal Tadka & Steamed Rice', calories: 520, protein: 38, carbs: 55, fats: 12, serving: '1 plate', region: 'West', tags: ['high_protein', 'omega3'] },
+      { name: 'Kadai Chicken with 2 Tawa Rotis & Mixed Green Salad', calories: 490, protein: 41, carbs: 40, fats: 13, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein'] },
     ],
     dinner: [
-      { name: 'Grilled Chicken with Salad', calories: 350, protein: 40, carbs: 20, fats: 12, serving: '1 plate' },
-      { name: 'Fish Fry with Roti', calories: 380, protein: 35, carbs: 38, fats: 10, serving: '1 plate' },
-      { name: 'Chicken Soup with Bread', calories: 280, protein: 25, carbs: 30, fats: 6, serving: '1 bowl' }
+      { name: 'Grilled Lemon Herb Chicken Breast (180g) with Sautéed Veggies', calories: 360, protein: 42, carbs: 14, fats: 12, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'low_carb', 'light'] },
+      { name: 'Fish Tikka (Tandoori Basa/Surmai) with Mint Salad & Chutney', calories: 330, protein: 35, carbs: 12, fats: 11, serving: '1 plate', region: 'North', tags: ['lean_protein', 'low_carb', 'omega3'] },
+      { name: 'Chicken Clear Soup with Shredded Chicken & 2 Rotis', calories: 340, protein: 32, carbs: 38, fats: 6, serving: '1 bowl + rotis', region: 'Pan-Indian', tags: ['light', 'high_protein', 'digestive'] },
+      { name: 'Egg Curry (2 Eggs) with 2 Multigrain Phulkas & Cucumber Slices', calories: 370, protein: 20, carbs: 42, fats: 12, serving: '1 plate', region: 'North', tags: ['high_protein', 'balanced'] },
+      { name: 'Kerala Fish Moilee (Light) with 2 Soft Appams', calories: 390, protein: 28, carbs: 44, fats: 10, serving: '1 bowl + 2 appams', region: 'South', tags: ['omega3', 'light'] },
+      { name: 'Chicken Stir-Fry with Capsicum, Onion, Mushroom & Brown Rice', calories: 410, protein: 36, carbs: 45, fats: 8, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Boiled Egg Whites (4) with Moong Dal & 1 Phulka', calories: 310, protein: 26, carbs: 36, fats: 5, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'low_fat'] },
+      { name: 'Tandoori Chicken Salad with Lemon Olive Oil Dressing', calories: 340, protein: 38, carbs: 12, fats: 13, serving: '1 large bowl', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: 'Steamed Fish (Patra ni Machhi) with Mint Coriander Chutney', calories: 320, protein: 34, carbs: 10, fats: 12, serving: '1 fillet', region: 'West', tags: ['lean_protein', 'digestive'] },
+      { name: 'Chicken Palak Soup with 1 Multigrain Toast', calories: 290, protein: 28, carbs: 22, fats: 7, serving: '1 bowl + toast', region: 'North', tags: ['high_protein', 'light'] },
+      { name: 'Egg Bhurji (3 eggs, 1 yolk) with 1 Phulka & Raw Salad', calories: 330, protein: 23, carbs: 24, fats: 13, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein'] },
+      { name: 'Prawns Pepper Fry with Tomato Rasam & Steamed Rice (Small)', calories: 380, protein: 32, carbs: 42, fats: 8, serving: '1 plate', region: 'South', tags: ['high_protein', 'omega3'] },
     ],
     snacks: [
-      { name: 'Boiled Eggs', calories: 140, protein: 12, carbs: 2, fats: 10, serving: '2 eggs' },
-      { name: 'Chicken Salad', calories: 200, protein: 25, carbs: 10, fats: 8, serving: '1 bowl' }
+      { name: '2 Hard Boiled Eggs with Chaat Masala', calories: 140, protein: 13, carbs: 2, fats: 9, serving: '2 eggs', region: 'Pan-Indian', tags: ['high_protein', 'low_carb'] },
+      { name: 'Chicken Tikka Skewers (100g, 4 pcs)', calories: 180, protein: 24, carbs: 4, fats: 6, serving: '4 pieces', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Egg Salad Cup with Greek Yogurt & Black Pepper', calories: 160, protein: 14, carbs: 4, fats: 9, serving: '1 cup', region: 'Pan-Indian', tags: ['high_protein'] },
+      { name: 'Shredded Chicken Breast Salad with Lime Dressing', calories: 170, protein: 25, carbs: 5, fats: 4, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Fish Fingers (Air-Fried, 3 pcs) with Mint Dip', calories: 180, protein: 16, carbs: 12, fats: 6, serving: '3 pieces', region: 'Pan-Indian', tags: ['high_protein'] },
+      { name: 'Roasted Kala Chana with Lemon Juice', calories: 140, protein: 8, carbs: 22, fats: 2, serving: '1 bowl', region: 'North', tags: ['fiber_rich', 'light'] },
+      { name: 'Chicken Shorba (Clear Spiced Broth)', calories: 110, protein: 15, carbs: 4, fats: 3, serving: '1 mug', region: 'North', tags: ['high_protein', 'hydrating'] },
+      { name: 'Masala Omelette Strips with Sliced Cucumbers', calories: 150, protein: 12, carbs: 3, fats: 9, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'low_carb'] },
+      { name: 'Tandoori Prawns (5 pcs) with Lemon Wedges', calories: 140, protein: 22, carbs: 3, fats: 3, serving: '5 pieces', region: 'Coastal', tags: ['lean_protein', 'high_protein'] },
+      { name: 'Spiced Chicken Keema Lettuce Boats', calories: 175, protein: 21, carbs: 4, fats: 7, serving: '3 boats', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: 'Boiled Egg Whites (4) with Black Pepper & Pink Salt', calories: 75, protein: 16, carbs: 1, fats: 0, serving: '4 whites', region: 'Pan-Indian', tags: ['pure_protein', 'lean_protein'] },
+      { name: 'Grilled Chicken Seekh Kebab (1 skewer) with Green Chutney', calories: 165, protein: 18, carbs: 5, fats: 7, serving: '1 skewer', region: 'North', tags: ['high_protein'] },
     ]
   },
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 3. VEGAN (100% Plant-Based: No Dairy, No Ghee, No Honey, No Eggs)
+  // ────────────────────────────────────────────────────────────────────────────
   vegan: {
     breakfast: [
-      { name: 'Oats with Almond Milk', calories: 200, protein: 8, carbs: 35, fats: 5, serving: '1 bowl' },
-      { name: 'Ragi Dosa', calories: 180, protein: 6, carbs: 35, fats: 3, serving: '1 dosa' },
-      { name: 'Quinoa Upma', calories: 220, protein: 9, carbs: 38, fats: 4, serving: '1 bowl' }
+      { name: 'Tofu Bhurji with Onions, Tomatoes & 2 Multigrain Toasts', calories: 310, protein: 18, carbs: 32, fats: 10, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'vegan_protein'] },
+      { name: 'Ragi Dosa (2) with Coconut Chutney & Vegetable Sambar', calories: 270, protein: 8, carbs: 44, fats: 5, serving: '2 dosas', region: 'South', tags: ['millets', 'calcium_rich'] },
+      { name: 'Besan Cheela with Spinach, Ajwain & Coriander Chutney', calories: 260, protein: 12, carbs: 34, fats: 7, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'gluten_free'] },
+      { name: 'Oats Cooked in Almond Milk with Flaxseeds & Sliced Berries', calories: 280, protein: 8, carbs: 46, fats: 6, serving: '1 bowl', region: 'Pan-Indian', tags: ['fiber_rich', 'omega3'] },
+      { name: 'Moong Dal Cheela with Grated Tofu Stuffing', calories: 290, protein: 17, carbs: 32, fats: 9, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'low_gi'] },
+      { name: 'Vegetable Poha with Roasted Peanuts & Fresh Coriander', calories: 270, protein: 6, carbs: 46, fats: 6, serving: '1 bowl', region: 'West', tags: ['light', 'iron_rich'] },
+      { name: 'Quinoa & Vegetable Upma with Mustard & Curry Leaves', calories: 260, protein: 9, carbs: 40, fats: 5, serving: '1 bowl', region: 'South', tags: ['complete_protein', 'low_gi'] },
+      { name: 'Pesarattu (Sprouted Green Gram Crepe) with Ginger Chutney', calories: 280, protein: 13, carbs: 42, fats: 5, serving: '2 crepes', region: 'South', tags: ['high_protein', 'fermented'] },
+      { name: 'Sattu Drink (Savory Roasted Gram Flour, Cumin & Lemon)', calories: 210, protein: 12, carbs: 32, fats: 3, serving: '1 large glass (300ml)', region: 'East', tags: ['high_protein', 'cooling', 'digestive'] },
+      { name: 'Methi Thepla (Sesame Oil) with Mango Chutney', calories: 290, protein: 7, carbs: 48, fats: 7, serving: '2 theplas', region: 'West', tags: ['comfort', 'fiber_rich'] },
+      { name: 'Idli (3) with South Indian Sambar (Zero Ghee)', calories: 220, protein: 8, carbs: 44, fats: 2, serving: '3 idlis', region: 'South', tags: ['fermented', 'low_fat'] },
+      { name: 'Chia Seed & Soy Milk Pudding with Walnuts', calories: 270, protein: 10, carbs: 24, fats: 14, serving: '1 jar', region: 'Pan-Indian', tags: ['omega3', 'calcium_rich'] },
+      { name: 'Sprouted Kala Chana Sundal with Coconut Flakes', calories: 240, protein: 11, carbs: 36, fats: 5, serving: '1 bowl', region: 'South', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'Avocado & Tomato on Toasted Whole Wheat Sourdough', calories: 310, protein: 7, carbs: 36, fats: 14, serving: '2 toasts', region: 'Pan-Indian', tags: ['healthy_fats'] },
     ],
     lunch: [
-      { name: 'Tofu Curry with Brown Rice', calories: 380, protein: 18, carbs: 58, fats: 8, serving: '1 plate' },
-      { name: 'Chickpea Curry with Roti', calories: 360, protein: 14, carbs: 62, fats: 6, serving: '1 plate' },
-      { name: 'Lentil Khichdi', calories: 300, protein: 12, carbs: 54, fats: 4, serving: '1 plate' }
+      { name: 'High-Protein Soya Chunks Curry with 3 Phulkas & Onion Salad', calories: 470, protein: 32, carbs: 54, fats: 9, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Tofu Matar Masala with Steamed Brown Rice & Cucumber Salad', calories: 480, protein: 23, carbs: 64, fats: 12, serving: '1 plate', region: 'North', tags: ['high_protein', 'vegan_protein'] },
+      { name: 'Rajma Masala with Steamed Basmati Rice & Tomato Kachumber', calories: 510, protein: 18, carbs: 84, fats: 7, serving: '1 plate', region: 'North', tags: ['fiber_rich', 'high_protein'] },
+      { name: 'Chickpea (Kabuli Chana) Curry with 2 Whole Wheat Rotis & Salad', calories: 460, protein: 17, carbs: 68, fats: 10, serving: '1 plate', region: 'North', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'South Indian Sambar, Beetroot Poriyal & Steamed Brown Rice', calories: 440, protein: 13, carbs: 76, fats: 6, serving: '1 Thali', region: 'South', tags: ['fiber_rich', 'antioxidant'] },
+      { name: 'Yellow Dal Tadka, Jeera Rice, Bhindi Masala & Raw Salad', calories: 470, protein: 15, carbs: 75, fats: 9, serving: '1 plate', region: 'North', tags: ['comfort', 'balanced'] },
+      { name: 'Lentil & Vegetable Khichdi (Zero Ghee) with Roasted Papad', calories: 400, protein: 15, carbs: 70, fats: 5, serving: '1 bowl', region: 'Pan-Indian', tags: ['comfort', 'digestive'] },
+      { name: 'Palak Tofu with 2 Jowar Rotis & Carrot Salad', calories: 430, protein: 21, carbs: 52, fats: 12, serving: '1 plate', region: 'West', tags: ['millets', 'high_protein', 'iron_rich'] },
+      { name: 'Mushroom & Green Pea Curry with 2 Rotis & Yellow Moong Dal', calories: 440, protein: 16, carbs: 62, fats: 10, serving: '1 plate', region: 'North', tags: ['balanced', 'fiber_rich'] },
+      { name: 'Quinoa Vegetable Biryani with Peanut Tomato Dip', calories: 460, protein: 14, carbs: 68, fats: 12, serving: '1 bowl', region: 'South', tags: ['complete_protein', 'low_gi'] },
+      { name: 'Kala Chana Masala (Black Chickpeas) with Steamed Rice', calories: 480, protein: 19, carbs: 74, fats: 8, serving: '1 plate', region: 'North', tags: ['high_protein', 'iron_rich'] },
+      { name: 'Mixed Dal (Panchmel) with 2 Rotis & Baingan Bharta', calories: 450, protein: 18, carbs: 64, fats: 10, serving: '1 plate', region: 'North', tags: ['balanced', 'fiber_rich'] },
+      { name: 'Tofu Tikka Bowl with Roasted Bell Peppers & Brown Rice', calories: 470, protein: 24, carbs: 58, fats: 12, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein'] },
     ],
     dinner: [
-      { name: 'Soya Chunks Curry with Roti', calories: 340, protein: 20, carbs: 48, fats: 7, serving: '1 plate' },
-      { name: 'Mixed Dal with Quinoa', calories: 320, protein: 15, carbs: 52, fats: 5, serving: '1 plate' }
+      { name: 'Tofu Tikka Skewers with Mint Chutney & Mixed Veg Salad', calories: 320, protein: 22, carbs: 14, fats: 14, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'low_carb'] },
+      { name: 'Moong Dal Cheela (2) with Sprouted Salad & Mint Chutney', calories: 310, protein: 16, carbs: 38, fats: 7, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'light'] },
+      { name: 'Mixed Vegetable Clear Soup with 2 Slices Sourdough Toast', calories: 270, protein: 7, carbs: 46, fats: 4, serving: '1 bowl + toasts', region: 'Pan-Indian', tags: ['light', 'digestive'] },
+      { name: 'Soya Chunk Stir-Fry with Broccoli, Capsicum & 1 Roti', calories: 340, protein: 26, carbs: 32, fats: 8, serving: '1 bowl + roti', region: 'North', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Yellow Moong Dal with 2 Phulkas & Lauki Sabzi', calories: 350, protein: 14, carbs: 54, fats: 6, serving: '1 plate', region: 'North', tags: ['light', 'balanced'] },
+      { name: 'Millet Khichdi (Barnyard/Kodo) with Roasted Peanuts & Coriander', calories: 340, protein: 10, carbs: 56, fats: 7, serving: '1 bowl', region: 'South', tags: ['millets', 'low_gi'] },
+      { name: 'Palak Dal with 2 Multigrain Phulkas & Beetroot Salad', calories: 350, protein: 15, carbs: 52, fats: 7, serving: '1 plate', region: 'North', tags: ['iron_rich', 'light'] },
+      { name: 'Warm Chickpea & Roast Pumpkin Salad with Tahini Lemon Dip', calories: 330, protein: 12, carbs: 38, fats: 12, serving: '1 bowl', region: 'Pan-Indian', tags: ['fiber_rich', 'healthy_fats'] },
+      { name: 'Tempeh Stir-Fry with French Beans, Carrots & Brown Rice', calories: 360, protein: 22, carbs: 38, fats: 11, serving: '1 bowl', region: 'Pan-Indian', tags: ['fermented', 'high_protein'] },
+      { name: 'Toor Dal Tadka with 2 Phulkas & Gobi Masala', calories: 360, protein: 13, carbs: 54, fats: 8, serving: '1 plate', region: 'North', tags: ['comfort', 'light'] },
     ],
     snacks: [
-      { name: 'Mixed Nuts', calories: 180, protein: 6, carbs: 8, fats: 15, serving: '30g' },
-      { name: 'Hummus with Carrot Sticks', calories: 140, protein: 5, carbs: 18, fats: 6, serving: '1 serving' }
+      { name: 'Roasted Spiced Makhana with Himalayan Pink Salt', calories: 110, protein: 3, carbs: 20, fats: 2, serving: '1 large cup (30g)', region: 'North', tags: ['light', 'crunchy'] },
+      { name: 'Sprouted Green Moong Chaat with Lemon & Green Chillies', calories: 130, protein: 9, carbs: 22, fats: 1, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'raw'] },
+      { name: 'Roasted Kala Chana (Black Chickpeas)', calories: 140, protein: 9, carbs: 20, fats: 2, serving: '35g', region: 'North', tags: ['high_protein', 'fiber_rich'] },
+      { name: 'Edamame Pods Steamed with Sea Salt', calories: 130, protein: 12, carbs: 9, fats: 4, serving: '1 cup', region: 'Pan-Indian', tags: ['high_protein', 'complete_protein'] },
+      { name: 'Hummus (Homemade) with Cucumber & Carrot Batons', calories: 150, protein: 6, carbs: 16, fats: 7, serving: '1 bowl', region: 'Pan-Indian', tags: ['healthy_fats'] },
+      { name: 'Peanut Chikki (Jaggery Peanut Brittle)', calories: 150, protein: 5, carbs: 16, fats: 8, serving: '2 small squares (30g)', region: 'West', tags: ['energy_boost'] },
+      { name: 'Roasted Pumpkin & Flax Seeds', calories: 150, protein: 6, carbs: 5, fats: 12, serving: '25g', region: 'Pan-Indian', tags: ['healthy_fats', 'omega3'] },
+      { name: 'Boiled Sweet Corn with Lemon Juice & Chat Masala', calories: 120, protein: 4, carbs: 24, fats: 1, serving: '1 cup', region: 'Pan-Indian', tags: ['fiber_rich'] },
+      { name: 'Sundal (South Indian Tempering of Boiled White Chana)', calories: 140, protein: 7, carbs: 21, fats: 3, serving: '1 cup', region: 'South', tags: ['fiber_rich', 'vegan_protein'] },
+      { name: 'Crispy Baked Tofu Bites with Green Mint Chutney', calories: 150, protein: 14, carbs: 4, fats: 8, serving: '100g', region: 'Pan-Indian', tags: ['high_protein', 'lean_protein'] },
+      { name: 'Handvo (Steamed Savory Lentil Cake) - Vegan Version', calories: 135, protein: 5, carbs: 22, fats: 3, serving: '2 pieces', region: 'West', tags: ['fermented', 'traditional'] },
+      { name: 'Roasted Almonds & Walnut Halves with Sea Salt', calories: 160, protein: 5, carbs: 5, fats: 14, serving: '25g', region: 'Pan-Indian', tags: ['healthy_fats', 'brain_food'] },
     ]
   },
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // 4. DIABETIC-FRIENDLY (Low Glycemic Index, High Fiber, Millets, Zero Sugar)
+  // ────────────────────────────────────────────────────────────────────────────
   diabetic_friendly: {
     breakfast: [
-      { name: 'Moong Dal Chilla', calories: 180, protein: 10, carbs: 24, fats: 4, serving: '2 chillas' },
-      { name: 'Oats with Nuts', calories: 200, protein: 8, carbs: 28, fats: 6, serving: '1 bowl' },
-      { name: 'Methi Paratha with Curd', calories: 220, protein: 9, carbs: 32, fats: 6, serving: '2 parathas' }
+      { name: 'Moong Dal Cheela with Methi Leaves & Mint Chutney', calories: 240, protein: 14, carbs: 28, fats: 5, serving: '2 cheelas', region: 'North', tags: ['low_gi', 'high_protein', 'sugar_free'] },
+      { name: 'Ragi Dosa with Coconut-Coriander Chutney & Tomato Rasam', calories: 220, protein: 7, carbs: 36, fats: 4, serving: '2 dosas', region: 'South', tags: ['millets', 'low_gi', 'calcium_rich'] },
+      { name: 'Vegetable Oats Daliya (Broken Wheat) with Beans & Carrots', calories: 230, protein: 8, carbs: 36, fats: 4, serving: '1 bowl', region: 'North', tags: ['fiber_rich', 'low_gi'] },
+      { name: 'Besan Methi Cheela with Fresh Curd (Sugar-Free)', calories: 250, protein: 13, carbs: 26, fats: 8, serving: '2 cheelas', region: 'North', tags: ['low_gi', 'high_protein'] },
+      { name: 'Sprouted Moong & Kala Chana Salad with Lemon & Rock Salt', calories: 190, protein: 12, carbs: 30, fats: 2, serving: '1 large bowl', region: 'Pan-Indian', tags: ['raw', 'low_gi', 'high_protein'] },
+      { name: 'Bajra (Pearl Millet) Methi Khakhra with Curd', calories: 210, protein: 7, carbs: 34, fats: 4, serving: '2 khakhras', region: 'West', tags: ['millets', 'fiber_rich'] },
+      { name: 'Jowar Vegetable Upma with Mustard & Curry Leaf Tempering', calories: 220, protein: 7, carbs: 36, fats: 4, serving: '1 bowl', region: 'West', tags: ['millets', 'low_gi'] },
+      { name: 'Egg White Omelette (3 whites) with Mushrooms & Spinach', calories: 170, protein: 18, carbs: 4, fats: 7, serving: '1 omelette', region: 'North', tags: ['lean_protein', 'very_low_carb'] },
+      { name: 'Quinoa Vegetable Bowl with Roasted Flaxseeds', calories: 240, protein: 9, carbs: 35, fats: 5, serving: '1 bowl', region: 'Pan-Indian', tags: ['low_gi', 'complete_protein'] },
+      { name: 'Barley Daliya with Sautéed Vegetables & Light Curd', calories: 210, protein: 7, carbs: 36, fats: 3, serving: '1 bowl', region: 'North', tags: ['beta_glucan', 'low_gi'] },
+      { name: 'Tofu Scramble with Tomato, Coriander & 1 Multigrain Toast', calories: 240, protein: 16, carbs: 18, fats: 9, serving: '1 plate', region: 'Pan-Indian', tags: ['high_protein', 'low_gi'] },
+      { name: 'Pesarattu (Moong Crepe) with Green Chilly Ginger Dip', calories: 240, protein: 11, carbs: 34, fats: 4, serving: '2 crepes', region: 'South', tags: ['fermented', 'low_gi'] },
     ],
     lunch: [
-      { name: 'Brown Rice with Dal', calories: 320, protein: 12, carbs: 55, fats: 4, serving: '1 plate' },
-      { name: 'Multigrain Roti with Palak', calories: 280, protein: 11, carbs: 45, fats: 6, serving: '1 plate' },
-      { name: 'Quinoa Pulao', calories: 300, protein: 10, carbs: 48, fats: 7, serving: '1 plate' }
+      { name: '2 Multigrain Rotis (Barley + Wheat), Dal Tadka & Karela Sabzi', calories: 390, protein: 16, carbs: 54, fats: 9, serving: '1 Thali', region: 'North', tags: ['low_gi', 'bitter_gourd_power'] },
+      { name: 'Brown Rice (1 cup), Palak Dal, Cabbage Poriyal & Curd', calories: 410, protein: 16, carbs: 62, fats: 8, serving: '1 plate', region: 'South', tags: ['fiber_rich', 'balanced'] },
+      { name: 'Rajma Masala with 2 Jowar Rotis & Cucumber Salad', calories: 430, protein: 18, carbs: 62, fats: 8, serving: '1 plate', region: 'North', tags: ['high_protein', 'millets'] },
+      { name: 'Grilled Fish / Tofu Steak with Steamed Veggies & Yellow Dal', calories: 380, protein: 32, carbs: 28, fats: 10, serving: '1 plate', region: 'Pan-Indian', tags: ['lean_protein', 'low_gi'] },
+      { name: 'Soya Chunks Curry with 2 Bajra Rotis & Fresh Salad', calories: 410, protein: 27, carbs: 48, fats: 9, serving: '1 plate', region: 'West', tags: ['high_protein', 'millets'] },
+      { name: 'Black Chickpea (Kala Chana) Curry with 2 Rotis & Raita', calories: 420, protein: 18, carbs: 56, fats: 10, serving: '1 plate', region: 'North', tags: ['low_gi', 'fiber_rich'] },
+      { name: 'Methi Dal, 2 Phulkas, Bhindi Masala & Cucumber Slices', calories: 380, protein: 15, carbs: 52, fats: 8, serving: '1 plate', region: 'North', tags: ['low_gi', 'digestive'] },
+      { name: 'Foxtail Millet Pulao with Sprouted Moong & Vegetable Raita', calories: 390, protein: 14, carbs: 58, fats: 8, serving: '1 bowl', region: 'South', tags: ['millets', 'low_gi'] },
+      { name: 'Paneer Tikka (120g) with Sautéed Bell Peppers & Moong Dal', calories: 400, protein: 24, carbs: 24, fats: 17, serving: '1 plate', region: 'North', tags: ['high_protein', 'low_carb'] },
+      { name: 'Chicken Breast Curry (Homestyle) with 2 Jowar Rotis & Salad', calories: 420, protein: 36, carbs: 38, fats: 10, serving: '1 plate', region: 'North', tags: ['high_protein', 'lean_protein', 'millets'] },
+      { name: 'Baingan Bharta with 2 Multigrain Rotis & Toor Dal', calories: 380, protein: 14, carbs: 52, fats: 9, serving: '1 plate', region: 'North', tags: ['low_gi', 'fiber_rich'] },
     ],
     dinner: [
-      { name: 'Grilled Fish with Vegetables', calories: 280, protein: 30, carbs: 20, fats: 8, serving: '1 plate' },
-      { name: 'Soup with Multigrain Bread', calories: 220, protein: 10, carbs: 35, fats: 5, serving: '1 bowl' }
+      { name: 'Yellow Moong Dal Khichdi with Dalia & Flaxseed Tadka', calories: 320, protein: 12, carbs: 48, fats: 6, serving: '1 bowl', region: 'North', tags: ['light', 'low_gi', 'digestive'] },
+      { name: '2 Jowar Phulkas with Palak Paneer & Sliced Cucumbers', calories: 350, protein: 18, carbs: 42, fats: 12, serving: '1 plate', region: 'North', tags: ['millets', 'high_protein'] },
+      { name: 'Grilled Fish / Tofu Tikka (140g) with Mint Chutney & Radish Salad', calories: 310, protein: 28, carbs: 10, fats: 12, serving: '1 plate', region: 'Pan-Indian', tags: ['lean_protein', 'low_carb'] },
+      { name: 'Lauki (Bottle Gourd) Sabzi with 2 Multigrain Rotis & Moong Dal', calories: 320, protein: 13, carbs: 46, fats: 6, serving: '1 plate', region: 'North', tags: ['light', 'low_cal', 'digestive'] },
+      { name: 'Vegetable Barley Clear Soup with Boiled Chickpea Salad', calories: 270, protein: 10, carbs: 42, fats: 4, serving: '1 bowl', region: 'Pan-Indian', tags: ['light', 'fiber_rich'] },
+      { name: 'Sprouted Moong Cheela with Paneer Filling & Green Salad', calories: 310, protein: 18, carbs: 30, fats: 9, serving: '2 cheelas', region: 'North', tags: ['high_protein', 'low_gi'] },
+      { name: 'Stir-Fried Methi Mushroom with 2 Jowar Rotis', calories: 310, protein: 11, carbs: 46, fats: 7, serving: '1 plate', region: 'West', tags: ['millets', 'low_gi'] },
+      { name: 'Chicken Soup with Vegetables & 1 Multigrain Toast', calories: 290, protein: 28, carbs: 20, fats: 6, serving: '1 bowl', region: 'Pan-Indian', tags: ['high_protein', 'light'] },
+      { name: 'Tofu Bhurji with 1 Bajra Roti & Tomato Onion Salad', calories: 320, protein: 17, carbs: 32, fats: 11, serving: '1 plate', region: 'West', tags: ['high_protein', 'millets'] },
+      { name: 'Methi Kadhi (No sugar) with Small Bowl of Brown Rice & Salad', calories: 310, protein: 10, carbs: 44, fats: 8, serving: '1 plate', region: 'West', tags: ['low_gi', 'digestive'] },
+      { name: 'Steamed Fish Fillet with Mustard Coriander Gravy & 1 Phulka', calories: 300, protein: 30, carbs: 20, fats: 8, serving: '1 plate', region: 'East', tags: ['lean_protein', 'omega3'] },
+      { name: 'Moong Sprouts & Vegetable Soup with Roasted Paneer Cubes', calories: 280, protein: 19, carbs: 22, fats: 10, serving: '1 large bowl', region: 'Pan-Indian', tags: ['high_protein', 'light'] },
+      { name: 'Cabbage Poriyal with 2 Phulkas & Thick Toor Dal', calories: 310, protein: 12, carbs: 48, fats: 6, serving: '1 plate', region: 'South', tags: ['low_gi', 'fiber_rich'] },
     ],
     snacks: [
-      { name: 'Cucumber Salad', calories: 50, protein: 2, carbs: 10, fats: 1, serving: '1 bowl' },
-      { name: 'Roasted Chana', calories: 120, protein: 6, carbs: 20, fats: 2, serving: '30g' }
+      { name: 'Roasted Spiced Makhana with Roasted Flaxseeds', calories: 110, protein: 4, carbs: 18, fats: 3, serving: '1 bowl', region: 'North', tags: ['low_gi', 'light'] },
+      { name: 'Roasted Kala Chana (Dry Roasted)', calories: 130, protein: 8, carbs: 18, fats: 2, serving: '35g', region: 'North', tags: ['low_gi', 'fiber_rich'] },
+      { name: 'Masala Buttermilk (Chaas) with Jeera & Curry Leaves', calories: 60, protein: 3, carbs: 6, fats: 1, serving: '1 tall glass', region: 'Pan-Indian', tags: ['low_cal', 'gut_health'] },
+      { name: 'Almonds (8) & Walnuts (2 halves)', calories: 130, protein: 4, carbs: 4, fats: 11, serving: 'small handful', region: 'Pan-Indian', tags: ['healthy_fats', 'low_gi'] },
+      { name: 'Cucumber & Tomato Chaat with Lemon & Black Salt', calories: 60, protein: 2, carbs: 12, fats: 0.5, serving: '1 bowl', region: 'Pan-Indian', tags: ['very_low_cal', 'hydration'] },
+      { name: 'Boiled Egg Whites (2) with Chaat Masala', calories: 70, protein: 12, carbs: 1, fats: 0.5, serving: '2 whites', region: 'Pan-Indian', tags: ['pure_protein', 'zero_carb'] },
+      { name: 'Boiled Methi Sprout Salad with Lemon & Pomegranate (1 tsp)', calories: 95, protein: 5, carbs: 14, fats: 1, serving: '1 bowl', region: 'Pan-Indian', tags: ['blood_sugar_control'] },
+      { name: 'Roasted Pumpkin & Sunflower Seeds Mix', calories: 125, protein: 5, carbs: 4, fats: 9, serving: '20g', region: 'Pan-Indian', tags: ['healthy_fats', 'low_gi'] },
+      { name: 'Sprouted Moong & Boiled Kala Chana Chaat', calories: 120, protein: 8, carbs: 18, fats: 1, serving: '1 cup', region: 'Pan-Indian', tags: ['low_gi', 'fiber_rich'] },
+      { name: 'Celery & Cucumber Sticks with Roasted Garlic Hung Curd Dip', calories: 85, protein: 5, carbs: 6, fats: 3, serving: '1 bowl', region: 'Pan-Indian', tags: ['low_carb', 'light'] },
+      { name: 'Roasted Soaked Soybeans with Chaat Masala', calories: 135, protein: 12, carbs: 8, fats: 5, serving: '30g', region: 'Pan-Indian', tags: ['high_protein', 'low_gi'] },
+      { name: 'Warm Cinnamon Turmeric Infusion with Chia Seeds', calories: 65, protein: 2, carbs: 5, fats: 3, serving: '1 mug', region: 'Pan-Indian', tags: ['insulin_sensitivity', 'hydration'] },
     ]
   }
 };
 
 module.exports = indianFoods;
+

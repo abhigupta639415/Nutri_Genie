@@ -1,8 +1,59 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Calendar, TrendingUp, Activity, Flame, Droplet, Moon, Plus, Smile, Save } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import {
+  Calendar,
+  TrendingUp,
+  Activity,
+  Flame,
+  Droplet,
+  Moon,
+  Plus,
+  Save,
+} from 'lucide-react';
+import { Button, Card, CardHeader, CardTitle, Badge, Modal, EmptyState, AnimatedCounter, Skeleton } from '../components/ui';
+
+// Custom Recharts Tooltip matching design system
+const CustomChartTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const formattedDate = new Date(label).toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+
+    return (
+      <div className="glass-panel dark:bg-slate-900/95 p-3 rounded-xl border border-slate-200 dark:border-white/10 shadow-xl text-xs space-y-1">
+        <p className="font-bold text-slate-700 dark:text-slate-300 pb-1 border-b border-slate-200 dark:border-white/10">
+          {formattedDate}
+        </p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="font-medium text-slate-600 dark:text-slate-400">{entry.name}:</span>
+            </span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 const Progress = () => {
   const [progressData, setProgressData] = useState(null);
@@ -17,7 +68,7 @@ const Progress = () => {
     weight: '',
     waterIntake: '',
     sleepHours: '',
-    mood: 'okay'
+    mood: 'okay',
   });
 
   useEffect(() => {
@@ -29,7 +80,7 @@ const Progress = () => {
     try {
       const [progRes, dietRes] = await Promise.all([
         axios.get(`http://localhost:3001/api/progress/summary?period=${period}`),
-        axios.get(`http://localhost:3001/api/diet/progress-stats`).catch(() => null)
+        axios.get(`http://localhost:3001/api/diet/progress-stats`).catch(() => null),
       ]);
       setProgressData(progRes.data);
       if (dietRes && dietRes.data) {
@@ -44,9 +95,9 @@ const Progress = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -56,413 +107,516 @@ const Progress = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3001/api/progress', {
-        caloriesConsumed: parseInt(formData.caloriesConsumed) || 0,
-        caloriesBurned: parseInt(formData.caloriesBurned) || 0,
-        weight: parseFloat(formData.weight),
-        waterIntake: parseFloat(formData.waterIntake) || 0,
-        sleepHours: parseFloat(formData.sleepHours) || 0,
-        mood: formData.mood
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        'http://localhost:3001/api/progress',
+        {
+          caloriesConsumed: parseInt(formData.caloriesConsumed, 10) || 0,
+          caloriesBurned: parseInt(formData.caloriesBurned, 10) || 0,
+          weight: parseFloat(formData.weight),
+          waterIntake: parseFloat(formData.waterIntake) || 0,
+          sleepHours: parseFloat(formData.sleepHours) || 0,
+          mood: formData.mood,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      // Reset form and refresh data
       setFormData({
         caloriesConsumed: '',
         caloriesBurned: '',
         weight: '',
         waterIntake: '',
         sleepHours: '',
-        mood: 'okay'
+        mood: 'okay',
       });
       setShowLogForm(false);
       fetchProgress();
-      alert('Progress logged successfully! 🎉');
     } catch (error) {
       console.error('Error logging progress:', error);
-      alert('Failed to log progress. Please try again.');
+      alert('Failed to log progress. Please verify inputs.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (loading && !progressData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-500 mx-auto"></div>
-          <p className="mt-4 text-slate-300 text-lg font-semibold">Loading your progress...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-96" />
         </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        <Skeleton className="h-80" />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in">
-          <div>
-            <h1 className="text-5xl md:text-6xl font-black text-white mb-3">
-              Progress Tracker 📊
-            </h1>
-            <p className="text-slate-300 text-lg">
-              Monitor your fitness journey with detailed analytics
-            </p>
-          </div>
+  const hasChartData = progressData?.chartData && progressData.chartData.length > 0;
 
-          <div className="mt-4 md:mt-0 flex space-x-2">
-            <button
-              onClick={() => setShowLogForm(!showLogForm)}
-              className="px-5 py-3 rounded-xl font-bold transition-all bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Log Progress
-            </button>
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* ─── HEADER ────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="brand" size="sm">
+              Health Analytics
+            </Badge>
+            <span className="text-xs text-slate-400">• Real-Time Bio-Metrics</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            Progress Tracker 📊
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Evaluate your calorie deficit, weight trajectory, and lifestyle consistency.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Period Toggle */}
+          <div className="glass-panel p-1 rounded-2xl flex items-center border border-slate-200/80 dark:border-white/10">
             {['week', 'month'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-5 py-3 rounded-xl font-bold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   period === p
-                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/30'
-                    : 'glass-dark text-slate-300 border border-white/10 hover:border-cyan-500/50'
+                    ? 'bg-cyan-500 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
+                {p === 'week' ? 'Past 7 Days' : 'Past 30 Days'}
               </button>
             ))}
           </div>
+
+          <Button
+            variant="accent"
+            size="md"
+            onClick={() => setShowLogForm(true)}
+            leftIcon={Plus}
+          >
+            Log Today
+          </Button>
         </div>
-        
-        {/* Diet Progress Summary Banner */}
-        {dietStats && dietStats.totalMeals > 0 && (
-          <div className="mb-8 glass-dark p-6 rounded-2xl border border-cyan-500/30 shadow-2xl animate-fade-in">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Activity className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black text-white">Diet Plan Progress</h2>
-                  <p className="text-slate-400 font-medium">{dietStats.completedMealsCount} / {dietStats.totalMeals} meals completed</p>
-                </div>
-              </div>
-              <div className="flex-1 w-full max-w-md">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-bold text-slate-300">Overall Progress</span>
-                  <span className="text-sm font-bold text-cyan-400">{dietStats.overallProgress}%</span>
-                </div>
-                <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-white/5">
-                  <div 
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${dietStats.overallProgress}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between mt-2 text-xs text-slate-500 font-semibold">
-                  <span>{dietStats.completedDays} full days completed</span>
-                  <Link to="/diet" className="text-cyan-400 hover:text-cyan-300 transition-colors">View Plan &rarr;</Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Log Progress Form */}
-        {showLogForm && (
-          <div className="mb-8 glass-dark p-8 rounded-2xl border border-green-500/30 shadow-2xl animate-fade-in">
-            <h2 className="text-3xl font-black text-white mb-6 flex items-center gap-3">
-              <Activity className="w-8 h-8 text-green-400" />
-              Log Today's Progress
-            </h2>
-            <form onSubmit={handleSubmitProgress} className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <Flame className="w-4 h-4 inline mr-2 text-orange-400" />
-                  Calories Consumed
-                </label>
-                <input
-                  type="number"
-                  name="caloriesConsumed"
-                  value={formData.caloriesConsumed}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2000"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <Activity className="w-4 h-4 inline mr-2 text-green-400" />
-                  Calories Burned
-                </label>
-                <input
-                  type="number"
-                  name="caloriesBurned"
-                  value={formData.caloriesBurned}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 500"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <TrendingUp className="w-4 h-4 inline mr-2 text-blue-400" />
-                  Current Weight (kg) *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 70.5"
-                  required
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <Droplet className="w-4 h-4 inline mr-2 text-cyan-400" />
-                  Water Intake (liters)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  name="waterIntake"
-                  value={formData.waterIntake}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2.5"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <Moon className="w-4 h-4 inline mr-2 text-purple-400" />
-                  Sleep Hours
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  name="sleepHours"
-                  value={formData.sleepHours}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 7.5"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-2">
-                  <Smile className="w-4 h-4 inline mr-2 text-yellow-400" />
-                  Mood
-                </label>
-                <select
-                  name="mood"
-                  value={formData.mood}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 transition"
-                >
-                  <option value="excellent">😄 Excellent</option>
-                  <option value="good">😊 Good</option>
-                  <option value="okay">😐 Okay</option>
-                  <option value="tired">😴 Tired</option>
-                  <option value="stressed">😰 Stressed</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2 flex gap-4">
-                <button
-                  type="submit"
-                  disabled={saving || !formData.weight}
-                  className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Save Progress
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowLogForm(false)}
-                  className="px-8 py-4 glass-dark text-slate-300 rounded-xl font-bold hover:bg-slate-700 transition-all border border-white/10"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Summary Cards */}
-        {progressData?.summary && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <Calendar className="w-8 h-8 text-cyan-400 mb-3" />
-              <div className="text-3xl font-black text-white">{progressData.summary.totalDays}</div>
-              <div className="text-sm text-slate-400 font-semibold">Days Tracked</div>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <Flame className="w-8 h-8 text-orange-400 mb-3" />
-              <div className="text-3xl font-black text-white">{progressData.summary.averageCaloriesConsumed}</div>
-              <div className="text-sm text-slate-400 font-semibold">Avg Cal/Day</div>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <Activity className="w-8 h-8 text-green-400 mb-3" />
-              <div className="text-3xl font-black text-white">{progressData.summary.averageCaloriesBurned}</div>
-              <div className="text-sm text-slate-400 font-semibold">Avg Burned</div>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <TrendingUp className="w-8 h-8 text-blue-400 mb-3" />
-              <div className="text-3xl font-black text-white">
-                {progressData.summary.weightChange > 0 ? '+' : ''}
-                {progressData.summary.weightChange?.toFixed(1)}kg
-              </div>
-              <div className="text-sm text-slate-400 font-semibold">Weight Change</div>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <Droplet className="w-8 h-8 text-cyan-400 mb-3" />
-              <div className="text-3xl font-black text-white">{progressData.summary.averageWaterIntake}</div>
-              <div className="text-sm text-slate-400 font-semibold">Avg Water (L)</div>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 transition-all">
-              <Moon className="w-8 h-8 text-purple-400 mb-3" />
-              <div className="text-3xl font-black text-white">{progressData.summary.averageSleepHours}</div>
-              <div className="text-sm text-slate-400 font-semibold">Avg Sleep (hrs)</div>
-            </div>
-          </div>
-        )}
-
-        {/* Weight Progress Chart */}
-        {progressData?.chartData && progressData.chartData.length > 0 && (
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl mb-8">
-            <h3 className="text-2xl font-black text-white mb-6">Weight Progress 📈</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={progressData.chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(date) => new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                  stroke="#9CA3AF"
-                />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
-                  labelFormatter={(date) => new Date(date).toLocaleDateString('en-IN')}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="weight" stroke="#06b6d4" strokeWidth={3} name="Weight (kg)" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Calories Chart */}
-        {progressData?.chartData && progressData.chartData.length > 0 && (
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl mb-8">
-            <h3 className="text-2xl font-black text-white mb-6">Calorie Intake vs Burn 🔥</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={progressData.chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(date) => new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                  stroke="#9CA3AF"
-                />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
-                  labelFormatter={(date) => new Date(date).toLocaleDateString('en-IN')}
-                />
-                <Legend />
-                <Bar dataKey="caloriesConsumed" fill="#f97316" name="Calories Consumed" />
-                <Bar dataKey="caloriesBurned" fill="#10b981" name="Calories Burned" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Lifestyle Metrics */}
-        {progressData?.chartData && progressData.chartData.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl">
-              <h3 className="text-2xl font-black text-white mb-6">Water Intake 💧</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={progressData.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-IN', { day: '2-digit' })}
-                    stroke="#9CA3AF"
-                  />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }} />
-                  <Line type="monotone" dataKey="waterIntake" stroke="#06b6d4" strokeWidth={2} name="Water (L)" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl">
-              <h3 className="text-2xl font-black text-white mb-6">Sleep Hours 😴</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={progressData.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-IN', { day: '2-digit' })}
-                    stroke="#9CA3AF"
-                  />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }} />
-                  <Line type="monotone" dataKey="sleepHours" stroke="#a855f7" strokeWidth={2} name="Sleep (hrs)" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* No Data Message */}
-        {(!progressData?.chartData || progressData.chartData.length === 0) && (
-          <div className="glass-dark p-12 rounded-2xl border border-white/10 shadow-2xl text-center">
-            <Activity className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-black text-white mb-3">No Progress Data Yet</h3>
-            <p className="text-slate-400 text-lg">
-              Start tracking your daily progress to see your analytics here
-            </p>
-          </div>
-        )}
-
-        {/* Motivation */}
-        {progressData?.summary && progressData.summary.totalWorkouts > 0 && (
-          <div className="mt-8 glass-dark p-8 rounded-2xl border-2 border-cyan-500/50 shadow-2xl shadow-cyan-500/20 text-center">
-            <h3 className="text-3xl font-black text-white mb-3">🎉 Great Progress!</h3>
-            <p className="text-xl text-slate-300">
-              You've completed <span className="text-cyan-400 font-bold">{progressData.summary.totalWorkouts}</span> workouts this {period}. Keep it up! 💪
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* ─── DIET PROGRESS BANNER ───────────────────────────────────────── */}
+      {dietStats && dietStats.totalMeals > 0 && (
+        <Card className="p-6 border-cyan-500/30">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/25">
+                <Activity className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Diet Plan Adherence
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {dietStats.completedMealsCount} of {dietStats.totalMeals} meals logged (
+                  {dietStats.completedDays} full days completed)
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full md:w-80 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-slate-500 dark:text-slate-400">Adherence</span>
+                <span className="text-cyan-600 dark:text-cyan-400">
+                  {dietStats.overallProgress}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${dietStats.overallProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* ─── SUMMARY METRICS CARDS ─────────────────────────────────────── */}
+      {progressData?.summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <Card className="p-4 text-center">
+            <Calendar className="w-5 h-5 text-cyan-500 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter value={progressData.summary.totalDays || 0} />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Days Tracked</p>
+          </Card>
+
+          <Card className="p-4 text-center">
+            <Flame className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter value={progressData.summary.averageCaloriesConsumed || 0} />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Cal / Day</p>
+          </Card>
+
+          <Card className="p-4 text-center">
+            <Activity className="w-5 h-5 text-emerald-500 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter value={progressData.summary.averageCaloriesBurned || 0} />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Burned</p>
+          </Card>
+
+          <Card className="p-4 text-center">
+            <TrendingUp className="w-5 h-5 text-indigo-500 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              {progressData.summary.weightChange > 0 ? '+' : ''}
+              <AnimatedCounter
+                value={progressData.summary.weightChange || 0}
+                decimals={1}
+                suffix="kg"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Weight Shift</p>
+          </Card>
+
+          <Card className="p-4 text-center">
+            <Droplet className="w-5 h-5 text-cyan-400 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter
+                value={progressData.summary.averageWaterIntake || 0}
+                decimals={1}
+                suffix="L"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Water</p>
+          </Card>
+
+          <Card className="p-4 text-center">
+            <Moon className="w-5 h-5 text-purple-400 mx-auto mb-1.5" />
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <AnimatedCounter
+                value={progressData.summary.averageSleepHours || 0}
+                decimals={1}
+                suffix="h"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Sleep</p>
+          </Card>
+        </div>
+      )}
+
+      {/* ─── CHARTS CENTERPIECE ────────────────────────────────────────── */}
+      {hasChartData ? (
+        <div className="space-y-6">
+          {/* Weight Line Chart */}
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-6 flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-cyan-500" />
+                  <span>Weight Trajectory</span>
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Visualizing body mass changes over your selected timeframe
+                </p>
+              </div>
+              <Badge variant="brand" size="sm">
+                Target Trend
+              </Badge>
+            </CardHeader>
+
+            <div className="h-72 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={progressData.chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(d) =>
+                      new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+                    }
+                    stroke="#94a3b8"
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
+                  <Tooltip content={<CustomChartTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    name="Weight (kg)"
+                    stroke="#06b6d4"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: '#06b6d4' }}
+                    activeDot={{ r: 7 }}
+                    isAnimationActive={true}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Calorie Intake vs Burn Chart */}
+          <Card className="p-6">
+            <CardHeader className="p-0 pb-6 flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-amber-500" />
+                  <span>Calorie Inflow vs Outflow</span>
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Daily consumed calories vs workout energy expenditure
+                </p>
+              </div>
+              <Badge variant="warning" size="sm">
+                Energy Balance
+              </Badge>
+            </CardHeader>
+
+            <div className="h-72 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={progressData.chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(d) =>
+                      new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+                    }
+                    stroke="#94a3b8"
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                  <Tooltip content={<CustomChartTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar
+                    dataKey="caloriesConsumed"
+                    name="Calories Consumed"
+                    fill="#f59e0b"
+                    radius={[6, 6, 0, 0]}
+                    isAnimationActive={true}
+                  />
+                  <Bar
+                    dataKey="caloriesBurned"
+                    name="Calories Burned"
+                    fill="#10b981"
+                    radius={[6, 6, 0, 0]}
+                    isAnimationActive={true}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Water & Sleep Side-by-Side */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <CardTitle className="text-base flex items-center gap-2 mb-4">
+                <Droplet className="w-4 h-4 text-cyan-400" />
+                <span>Hydration Tracking (Liters)</span>
+              </CardTitle>
+              <div className="h-52 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={progressData.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) =>
+                        new Date(d).toLocaleDateString('en-IN', { day: '2-digit' })
+                      }
+                      stroke="#94a3b8"
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <Tooltip content={<CustomChartTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="waterIntake"
+                      name="Water (L)"
+                      stroke="#06b6d4"
+                      strokeWidth={2.5}
+                      dot={{ r: 3 }}
+                      isAnimationActive={true}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <CardTitle className="text-base flex items-center gap-2 mb-4">
+                <Moon className="w-4 h-4 text-purple-400" />
+                <span>Sleep Cycles (Hours)</span>
+              </CardTitle>
+              <div className="h-52 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={progressData.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) =>
+                        new Date(d).toLocaleDateString('en-IN', { day: '2-digit' })
+                      }
+                      stroke="#94a3b8"
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <Tooltip content={<CustomChartTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="sleepHours"
+                      name="Sleep (hrs)"
+                      stroke="#818cf8"
+                      strokeWidth={2.5}
+                      dot={{ r: 3 }}
+                      isAnimationActive={true}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Activity}
+          title="No Progress Entries Yet"
+          description="Log your daily weight, calories consumed, water, and sleep to generate interactive analytics."
+          action={
+            <Button variant="primary" size="md" onClick={() => setShowLogForm(true)} leftIcon={Plus}>
+              Log First Entry
+            </Button>
+          }
+        />
+      )}
+
+      {/* ─── LOG PROGRESS MODAL ────────────────────────────────────────── */}
+      <Modal
+        isOpen={showLogForm}
+        onClose={() => setShowLogForm(false)}
+        title="Log Today's Health Metrics"
+        description="Record your weight, nutrition, hydration, and recovery."
+        maxWidth="max-w-xl"
+      >
+        <form onSubmit={handleSubmitProgress} className="space-y-4 pt-2">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Weight (kg) *
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                name="weight"
+                value={formData.weight}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g. 70.5"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Calories Consumed
+              </label>
+              <input
+                type="number"
+                name="caloriesConsumed"
+                value={formData.caloriesConsumed}
+                onChange={handleInputChange}
+                placeholder="e.g. 1850"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Calories Burned (Workout)
+              </label>
+              <input
+                type="number"
+                name="caloriesBurned"
+                value={formData.caloriesBurned}
+                onChange={handleInputChange}
+                placeholder="e.g. 450"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Water Intake (Liters)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                name="waterIntake"
+                value={formData.waterIntake}
+                onChange={handleInputChange}
+                placeholder="e.g. 2.5"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Sleep Hours
+              </label>
+              <input
+                type="number"
+                step="0.5"
+                name="sleepHours"
+                value={formData.sleepHours}
+                onChange={handleInputChange}
+                placeholder="e.g. 7.5"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Daily Mood
+              </label>
+              <select
+                name="mood"
+                value={formData.mood}
+                onChange={handleInputChange}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              >
+                <option value="excellent">😄 High Energy & Great</option>
+                <option value="good">😊 Good & On Track</option>
+                <option value="okay">😐 Normal / Okay</option>
+                <option value="tired">😴 Fatigued / Sore</option>
+                <option value="stressed">😰 Stressed / Busy</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10">
+            <Button
+              type="button"
+              variant="ghost"
+              size="md"
+              onClick={() => setShowLogForm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              isLoading={saving}
+              leftIcon={Save}
+            >
+              Save Metrics
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

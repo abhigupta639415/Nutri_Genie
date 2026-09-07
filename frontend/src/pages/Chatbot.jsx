@@ -1,14 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Send, Bot, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Bot, User, RefreshCw } from 'lucide-react';
+import { Button, Card, Badge } from '../components/ui';
+
+const quickQuestions = [
+  'Best vegetarian protein sources',
+  'How to create a healthy calorie deficit?',
+  'Quick 15-minute home workout',
+  'Indian snacks under 150 calories',
+  'How much water should I drink daily?',
+];
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
     {
+      id: 'welcome',
       type: 'bot',
-      text: "Hello! I'm NutriBot, your AI fitness assistant. 🤖\n\nI can help you with:\n✅ Diet and nutrition advice\n✅ Workout recommendations\n✅ Motivation and tips\n✅ Indian food suggestions\n✅ Fitness calculations\n\nWhat would you like to know?",
-      timestamp: new Date()
-    }
+      text: "Namaste! I'm NutriBot, your AI nutritionist and fitness coach. 🤖\n\nI can help you with:\n• Indian meal swaps and macro counts\n• High-protein vegetarian & vegan sources\n• Workout routines & exercise form tips\n• Hydration & metabolic health\n\nHow can I help you today?",
+      timestamp: new Date(),
+    },
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,218 +31,208 @@ const Chatbot = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, loading]);
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!inputMessage.trim() || loading) return;
 
+    const userText = inputMessage.trim();
     const userMessage = {
+      id: `user-${Date.now()}`,
       type: 'user',
-      text: inputMessage,
-      timestamp: new Date()
+      text: userText,
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setLoading(true);
 
     try {
       const response = await axios.post('http://localhost:3001/api/chatbot/chat', {
-        message: inputMessage
+        message: userText,
       });
 
       const botMessage = {
+        id: `bot-${Date.now()}`,
         type: 'bot',
         text: response.data.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage = {
+        id: `err-${Date.now()}`,
         type: 'bot',
-        text: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date()
+        text: 'Sorry, I encountered an issue connecting to the AI brain. Please try asking again in a moment.',
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
   };
-
-  const quickQuestions = [
-    'How can I lose weight?',
-    'Best vegetarian protein sources',
-    'Home workout routine',
-    'Motivate me!',
-    'How much water should I drink?'
-  ];
 
   const handleQuickQuestion = (question) => {
     setInputMessage(question);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-3">
-            Chat with NutriBot 🤖
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="brand" size="sm">
+              24/7 AI Health Companion
+            </Badge>
+            <span className="text-xs text-slate-400">• Gemini Pro Powered</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            NutriBot Assistant 🤖
           </h1>
-          <p className="text-slate-300 text-lg">
-            Your AI-powered fitness and nutrition assistant
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Instant guidance on Indian diet, macros, workout form, and healthy habits.
           </p>
         </div>
 
-        {/* Chat Container */}
-        <div className="glass-dark rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-          {/* Messages Area */}
-          <div className="h-[500px] overflow-y-auto p-6 space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`flex max-w-[80%] ${
-                    message.type === 'user' ? 'flex-row-reverse' : 'flex-row'
-                  } items-start space-x-2`}
-                >
-                  {/* Avatar */}
-                  <div
-                    className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
-                      message.type === 'user'
-                        ? 'bg-gradient-to-br from-cyan-500 to-purple-500 ml-2'
-                        : 'bg-gradient-to-br from-purple-500 to-pink-500 mr-2'
-                    }`}
-                  >
-                    {message.type === 'user' ? (
-                      <User className="w-6 h-6 text-white" />
-                    ) : (
-                      <Bot className="w-6 h-6 text-white" />
-                    )}
-                  </div>
-
-                  {/* Message Bubble */}
-                  <div
-                    className={`px-4 py-3 rounded-2xl shadow-lg ${
-                      message.type === 'user'
-                        ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-cyan-500/30'
-                        : 'glass-dark border border-white/10 text-white shadow-purple-500/20'
-                    }`}
-                  >
-                    <p className="whitespace-pre-line">{message.text}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        message.type === 'user'
-                          ? 'text-cyan-100'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      {message.timestamp.toLocaleTimeString('en-IN', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="flex justify-start">
-                <div className="flex items-start space-x-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                    <Bot className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="glass-dark border border-white/10 px-4 py-3 rounded-2xl shadow-lg">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Questions */}
-          <div className="px-6 py-3 bg-slate-800/30 border-t border-white/10">
-            <p className="text-sm text-slate-300 font-semibold mb-3">Quick questions:</p>
-            <div className="flex flex-wrap gap-2">
-              {quickQuestions.map((question, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleQuickQuestion(question)}
-                  className="px-4 py-2 text-sm glass-dark border border-white/10 text-slate-300 rounded-full hover:bg-gradient-to-r hover:from-cyan-500 hover:to-purple-500 hover:text-white hover:border-transparent transition-all transform hover:scale-105 font-semibold"
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Input Area */}
-          <form onSubmit={handleSendMessage} className="p-6 bg-slate-800/30 border-t border-white/10">
-            <div className="flex space-x-3">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your message..."
-                disabled={loading}
-                className="flex-1 px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={loading || !inputMessage.trim()}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl hover:shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-2 font-bold"
-              >
-                <Send className="w-5 h-5" />
-                <span className="hidden sm:inline">Send</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Info Cards */}
-        <div className="grid md:grid-cols-3 gap-4 mt-8">
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 hover:shadow-cyan-500/20 transition-all">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-3 shadow-lg">
-              <div className="text-2xl">🍽️</div>
-            </div>
-            <h3 className="font-black text-white mb-2">Diet Advice</h3>
-            <p className="text-sm text-slate-400">Ask about meal plans and nutrition</p>
-          </div>
-
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 hover:shadow-purple-500/20 transition-all">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-3 shadow-lg">
-              <div className="text-2xl">💪</div>
-            </div>
-            <h3 className="font-black text-white mb-2">Workout Tips</h3>
-            <p className="text-sm text-slate-400">Get exercise recommendations</p>
-          </div>
-
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:scale-105 hover:shadow-yellow-500/20 transition-all">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mb-3 shadow-lg">
-              <div className="text-2xl">🎯</div>
-            </div>
-            <h3 className="font-black text-white mb-2">Motivation</h3>
-            <p className="text-sm text-slate-400">Stay inspired on your journey</p>
-          </div>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            setMessages([
+              {
+                id: 'reset',
+                type: 'bot',
+                text: "Chat cleared! What health or nutrition question would you like to explore?",
+                timestamp: new Date(),
+              },
+            ])
+          }
+          leftIcon={RefreshCw}
+          className="text-xs self-start sm:self-auto"
+        >
+          Clear Chat
+        </Button>
       </div>
+
+      {/* Main Chat Container */}
+      <Card className="overflow-hidden flex flex-col h-[640px] border-slate-200/80 dark:border-white/10 shadow-2xl">
+        {/* Messages Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          <AnimatePresence initial={false}>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className={`flex gap-3 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.type === 'bot' && (
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-cyan-500/20 mt-1">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                )}
+
+                <div
+                  className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl text-sm leading-relaxed ${
+                    msg.type === 'user'
+                      ? 'bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 text-white rounded-br-sm shadow-md shadow-cyan-500/20'
+                      : 'bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-slate-100 rounded-bl-sm shadow-sm'
+                  }`}
+                >
+                  <p className="whitespace-pre-line">{msg.text}</p>
+                  <span
+                    className={`text-[10px] block mt-1.5 ${
+                      msg.type === 'user'
+                        ? 'text-cyan-100 text-right'
+                        : 'text-slate-400 text-left'
+                    }`}
+                  >
+                    {msg.timestamp?.toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+
+                {msg.type === 'user' && (
+                  <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0 mt-1">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Typing Indicator */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3"
+            >
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-white/10 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Quick Prompt Chips */}
+        <div className="px-4 sm:px-6 py-2 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-2 overflow-x-auto">
+          <span className="text-[11px] font-bold text-slate-400 shrink-0">Try:</span>
+          {quickQuestions.map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => handleQuickQuestion(q)}
+              className="shrink-0 px-2.5 py-1 text-xs rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/40 transition-colors cursor-pointer"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* Input Bar */}
+        <form
+          onSubmit={handleSendMessage}
+          className="p-3 sm:p-4 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-900 flex items-center gap-2"
+        >
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Ask NutriBot about meals, recipes, macros, or workouts..."
+            disabled={loading}
+            className="flex-1 px-4 py-3 text-sm rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all font-medium"
+          />
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={!inputMessage.trim() || loading}
+            isLoading={loading}
+            rightIcon={Send}
+            className="px-5 shadow-sm"
+          >
+            Send
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 };

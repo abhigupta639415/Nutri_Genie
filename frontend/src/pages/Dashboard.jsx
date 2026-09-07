@@ -2,7 +2,41 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Activity, Target, TrendingUp, Flame, Droplet, Moon, Calendar, Settings, Save, ChevronDown, ChevronUp, Clock, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Activity,
+  Target,
+  TrendingUp,
+  Flame,
+  Calendar,
+  Settings,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  Utensils,
+  Dumbbell,
+  CheckSquare,
+  Bot,
+  Lightbulb,
+  Check,
+  ArrowRight,
+} from 'lucide-react';
+import { Button, Card, CardHeader, CardTitle, Badge, AnimatedCounter, Skeleton } from '../components/ui';
+
+const goalMap = {
+  weight_loss: 'Weight Loss',
+  weight_gain: 'Weight Gain',
+  muscle_gain: 'Muscle Gain',
+  maintenance: 'Maintenance',
+};
+
+const activityMap = {
+  sedentary: 'Sedentary',
+  light: 'Light (1-2x/wk)',
+  moderate: 'Moderate (3-5x/wk)',
+  active: 'Active (Daily)',
+  very_active: 'Very Active (Athlete)',
+};
 
 const Dashboard = () => {
   const { user, updateProfile } = useAuth();
@@ -50,9 +84,31 @@ const Dashboard = () => {
     }
   }, [user, getDurationKey]);
 
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      const [dietResponse, progressResponse] = await Promise.all([
+        axios.get('http://localhost:3001/api/diet/plan'),
+        axios.get('http://localhost:3001/api/progress/summary?period=week'),
+      ]);
+
+      setStats({
+        diet: dietResponse.data,
+        progress: progressResponse.data,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
   // Save settings handler
   const handleSaveSettings = async () => {
-    // 1. Validate customization
     if (!settingsForm.goal || !settingsForm.activityLevel || !settingsForm.dietaryPreference) {
       setSaveError('Please select a valid fitness goal, activity level, and dietary preference.');
       return;
@@ -103,9 +159,8 @@ const Dashboard = () => {
         forceRegenerate: true,
       });
 
-      // Update dashboard state with newly calculated metrics & macros
       if (genRes.data?.metrics && genRes.data?.macros) {
-        setStats(prev => ({
+        setStats((prev) => ({
           ...prev,
           diet: {
             ...prev?.diet,
@@ -114,7 +169,7 @@ const Dashboard = () => {
             planDurationWeeks: genRes.data.planDurationWeeks,
             planDurationDays: genRes.data.planDurationDays,
             mealPlan: genRes.data.plan,
-          }
+          },
         }));
       }
 
@@ -130,153 +185,201 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const [dietResponse, progressResponse] = await Promise.all([
-        axios.get('http://localhost:3001/api/diet/plan'),
-        axios.get('http://localhost:3001/api/progress/summary?period=week')
-      ]);
-
-      setStats({
-        diet: dietResponse.data,
-        progress: progressResponse.data
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-500 mx-auto"></div>
-          <p className="mt-4 text-slate-300 text-lg font-semibold">Loading your dashboard...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Skeleton className="h-56" />
+          <Skeleton className="h-56" />
         </div>
       </div>
     );
   }
 
-  const goalMap = {
-    weight_loss: 'Weight Loss',
-    weight_gain: 'Weight Gain',
-    muscle_gain: 'Muscle Gain',
-    maintenance: 'Maintenance'
-  };
-
-  const activityMap = {
-    sedentary: 'Sedentary',
-    light: 'Light',
-    moderate: 'Moderate',
-    active: 'Active',
-    very_active: 'Very Active'
-  };
+  const targetCal = stats?.diet?.metrics?.targetCalories || 0;
+  const bmiVal = stats?.diet?.metrics?.bmi?.value || 0;
+  const bmiCategory = stats?.diet?.metrics?.bmi?.category || 'Healthy';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-3">
-            Welcome back, {user?.name}! 👋
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* ─── GREETING BANNER ───────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2"
+      >
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="brand" size="sm">
+              Today's Overview
+            </Badge>
+            <span className="text-xs text-slate-400">
+              {new Date().toLocaleDateString('en-IN', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            Welcome back, {user?.name || 'Friend'}! 👋
           </h1>
-          <p className="text-slate-300 text-lg">
-            Here's your fitness overview for today
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
+            Here is your daily nutrition and training trajectory.
           </p>
         </div>
 
-        {/* Profile Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-slide-up">
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-cyan-500/20 transition-all transform hover:scale-105">
-            <div className="text-cyan-400 mb-3">
-              <Activity className="w-8 h-8" />
-            </div>
-            <div className="text-3xl font-black text-white">{user?.weight} kg</div>
-            <div className="text-sm text-slate-400 font-semibold">Current Weight</div>
-          </div>
-
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-blue-500/20 transition-all transform hover:scale-105">
-            <div className="text-blue-400 mb-3">
-              <Target className="w-8 h-8" />
-            </div>
-            <div className="text-3xl font-black text-white">
-              {stats?.diet?.metrics?.bmi?.value || 'N/A'}
-            </div>
-            <div className="text-sm text-slate-400 font-semibold">BMI</div>
-          </div>
-
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-orange-500/20 transition-all transform hover:scale-105">
-            <div className="text-orange-400 mb-3">
-              <Flame className="w-8 h-8" />
-            </div>
-            <div className="text-3xl font-black text-white">
-              {stats?.diet?.metrics?.targetCalories || 0}
-            </div>
-            <div className="text-sm text-slate-400 font-semibold">Target Cal/Day</div>
-          </div>
-
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-green-500/20 transition-all transform hover:scale-105">
-            <div className="text-green-400 mb-3">
-              <TrendingUp className="w-8 h-8" />
-            </div>
-            <div className="text-3xl font-black text-white">
-              {goalMap[user?.goal] || 'N/A'}
-            </div>
-            <div className="text-sm text-slate-400 font-semibold">Your Goal</div>
-          </div>
+        <div className="flex items-center gap-3">
+          <Link to="/diet">
+            <Button variant="primary" size="md" rightIcon={Utensils}>
+              View Diet Plan
+            </Button>
+          </Link>
+          <Link to="/workout">
+            <Button variant="secondary" size="md" rightIcon={Dumbbell}>
+              Today's Workout
+            </Button>
+          </Link>
         </div>
+      </motion.div>
 
-        {/* ═══════════════ CUSTOMIZE YOUR PLAN ═══════════════ */}
-        <div className="mb-8 animate-slide-up">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="w-full glass-dark p-5 rounded-2xl border border-white/10 shadow-2xl hover:border-cyan-500/30 transition-all flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg shadow-cyan-500/20">
-                <Settings className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-black text-white">Customize Your Plan</h3>
-                <p className="text-slate-400 text-sm">Change your goal, activity level, dietary preference & plan duration</p>
-              </div>
+      {/* ─── TOP METRIC CARDS ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Weight */}
+        <Card hoverEffect className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Current Weight
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+              <Activity className="w-4 h-4" />
             </div>
-            <div className="flex items-center gap-2">
-              {saveSuccess && (
-                <span className="text-green-400 text-sm font-bold animate-fade-in">✓ Saved!</span>
-              )}
-              {showSettings ? (
-                <ChevronUp className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
-              ) : (
-                <ChevronDown className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
-              )}
-            </div>
-          </button>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            <AnimatedCounter value={user?.weight || 0} decimals={1} suffix=" kg" />
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1 font-medium">Recorded at onboarding</p>
+        </Card>
 
+        {/* Metric 2: BMI */}
+        <Card hoverEffect className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Body Mass Index
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <Target className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            {bmiVal ? <AnimatedCounter value={bmiVal} decimals={1} /> : 'N/A'}
+          </div>
+          <div className="mt-1">
+            <Badge variant={bmiCategory.toLowerCase().includes('normal') || bmiCategory.toLowerCase().includes('healthy') ? 'accent' : 'warning'} size="sm">
+              {bmiCategory}
+            </Badge>
+          </div>
+        </Card>
+
+        {/* Metric 3: Target Calories */}
+        <Card hoverEffect className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Target Calories
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Flame className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            <AnimatedCounter value={targetCal} decimals={0} suffix=" kcal" />
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1 font-medium">Daily energy budget</p>
+        </Card>
+
+        {/* Metric 4: Goal */}
+        <Card hoverEffect className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Active Goal
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white truncate">
+            {goalMap[user?.goal] || 'Healthy Habit'}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1 font-medium truncate">
+            {activityMap[user?.activityLevel] || 'Active Routine'}
+          </p>
+        </Card>
+      </div>
+
+      {/* ─── CUSTOMIZE YOUR PLAN ACCORDION ─────────────────────────────── */}
+      <Card className="overflow-hidden border-cyan-500/30">
+        <button
+          type="button"
+          onClick={() => setShowSettings(!showSettings)}
+          className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+              <Settings className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Customize Your Plan
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Adjust your goal, activity level, dietary preference, and duration presets
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {saveSuccess && (
+              <Badge variant="accent" size="sm" icon={Check}>
+                Saved & Generated!
+              </Badge>
+            )}
+            <div className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              {showSettings ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </div>
+          </div>
+        </button>
+
+        <AnimatePresence>
           {showSettings && (
-            <div className="mt-3 glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl animate-fade-in">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="border-t border-slate-200/80 dark:border-white/10 p-5 sm:p-6 space-y-6"
+            >
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Goal */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">🎯 Fitness Goal</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    🎯 Fitness Goal
+                  </label>
                   <select
                     value={settingsForm.goal}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, goal: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, goal: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="weight_loss">🔥 Weight Loss</option>
+                    <option value="weight_loss">🔥 Weight Loss (Fat Loss)</option>
                     <option value="weight_gain">💪 Weight Gain</option>
                     <option value="muscle_gain">🏋️ Muscle Gain</option>
                     <option value="maintenance">⚖️ Maintenance</option>
@@ -285,30 +388,36 @@ const Dashboard = () => {
 
                 {/* Activity Level */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">🏃 Activity Level</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    🏃 Activity Level
+                  </label>
                   <select
                     value={settingsForm.activityLevel}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, activityLevel: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, activityLevel: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="sedentary">🪑 Sedentary</option>
-                    <option value="light">🚶 Light (1-3 days/week)</option>
-                    <option value="moderate">🏃 Moderate (4-5 days/week)</option>
-                    <option value="active">💪 Active (Daily)</option>
-                    <option value="very_active">🔥 Very Active (Intense)</option>
+                    <option value="sedentary">🪑 Sedentary (Desk Job)</option>
+                    <option value="light">🚶 Light (1-2x/week)</option>
+                    <option value="moderate">🏃 Moderate (3-5x/week)</option>
+                    <option value="active">💪 Active (Daily workout)</option>
+                    <option value="very_active">🔥 Very Active (Athlete)</option>
                   </select>
                 </div>
 
                 {/* Dietary Preference */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">🥗 Diet Preference</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    🥗 Diet Preference
+                  </label>
                   <select
                     value={settingsForm.dietaryPreference}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, dietaryPreference: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, dietaryPreference: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="vegetarian">🥬 Vegetarian</option>
+                    <option value="vegetarian">🥬 Pure Vegetarian</option>
+                    <option value="eggetarian">🍳 Eggetarian</option>
                     <option value="non_vegetarian">🍗 Non-Vegetarian</option>
+                    <option value="jain">🙏 Jain (No Root Veg)</option>
                     <option value="vegan">🌱 Vegan</option>
                     <option value="diabetic_friendly">💊 Diabetic Friendly</option>
                   </select>
@@ -316,11 +425,13 @@ const Dashboard = () => {
 
                 {/* Plan Duration */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">📅 Plan Duration</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    📅 Plan Duration
+                  </label>
                   <select
                     value={selectedDuration}
                     onChange={(e) => setSelectedDuration(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white font-semibold focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="weeks-1">⚡ 1 Week (7 days)</option>
                     <option value="weeks-2">🔥 2 Weeks (14 days)</option>
@@ -333,244 +444,307 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Custom Duration Input if selected */}
+              {/* Custom Duration Input */}
               {selectedDuration === 'custom' && (
-                <div className="mt-4 p-4 bg-slate-800/50 border border-white/10 rounded-xl">
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Custom Duration (Days, 1–90)</label>
+                <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Custom Duration (1–90 Days)
+                  </label>
                   <input
                     type="number"
                     min="1"
                     max="90"
-                    placeholder="e.g. 45 days"
+                    placeholder="e.g. 45"
                     value={customDays}
                     onChange={(e) => setCustomDays(e.target.value)}
-                    className="w-full sm:w-64 px-3 py-2 bg-slate-900 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                    className="w-full sm:w-64 px-3 py-2 text-sm rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                 </div>
               )}
 
-              {/* Preferences & Allergies */}
-              <div className="grid sm:grid-cols-2 gap-5 mt-5">
+              {/* Food Preferences & Allergies */}
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">🍛 Food Preferences (Optional)</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    🍛 Food Preferences (Optional)
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. North Indian, High Protein, Oats, Paneer"
+                    placeholder="e.g. North Indian, Sattu, Paneer, Sprouted Moong"
                     value={settingsForm.foodPreferences}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, foodPreferences: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 font-medium focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm"
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, foodPreferences: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">⚠️ Allergies / Restrictions (Optional)</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    ⚠️ Allergies / Restrictions (Optional)
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. Peanuts, Gluten, Dairy, Shellfish"
+                    placeholder="e.g. Peanuts, Dairy, Gluten"
                     value={settingsForm.allergies}
-                    onChange={(e) => setSettingsForm(prev => ({ ...prev, allergies: e.target.value }))}
-                    className="w-full px-4 py-3 bg-slate-800/80 border border-white/10 rounded-xl text-white placeholder-slate-500 font-medium focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm"
+                    onChange={(e) => setSettingsForm((prev) => ({ ...prev, allergies: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
                   />
                 </div>
               </div>
 
-              {/* Save Button */}
-              <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                <p className="text-slate-400 text-sm">
-                  Changes will recalculate your target calories and generate a new diet plan.
-                </p>
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={saving}
-                  className={`flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all shadow-lg ${
-                    saving
-                      ? 'bg-slate-700 text-slate-300 cursor-not-allowed opacity-90'
-                      : saveSuccess
-                        ? 'bg-green-600 shadow-green-500/30'
-                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-purple-500/30 hover:scale-[1.02]'
-                  }`}
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Generating your personalized diet plan...
-                    </>
-                  ) : saveSuccess ? (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Your personalized diet plan is ready!
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Save Changes
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Success Message Banner */}
-              {saveSuccess && (
-                <div className="mt-4 p-4 bg-green-500/15 border border-green-500/30 rounded-xl flex items-center justify-between gap-3 text-green-300">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-green-400 shrink-0" />
-                    <span className="text-sm font-semibold">
-                      Your personalized diet plan is ready!
-                    </span>
-                  </div>
-                  <Link
-                    to="/diet"
-                    className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-xs rounded-lg transition-colors shadow"
-                  >
-                    View Diet Plan →
-                  </Link>
-                </div>
-              )}
-
-              {/* Error Message Banner */}
+              {/* Action and Error */}
               {saveError && (
-                <div className="mt-4 p-4 bg-red-500/15 border border-red-500/30 rounded-xl flex items-center justify-between gap-3 text-red-300">
-                  <div>
-                    <p className="text-sm font-bold text-red-300">Unable to generate your diet plan.</p>
-                    <p className="text-xs text-red-400/90 mt-0.5">Please try again. {saveError}</p>
-                  </div>
-                  <button
-                    onClick={handleSaveSettings}
-                    className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 font-bold text-xs rounded-lg transition-colors"
-                  >
-                    Retry
-                  </button>
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
+                  {saveError}
                 </div>
               )}
-            </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Saving will recalculate your energy metrics and regenerate your custom meal slots.
+                </p>
+                <Button
+                  onClick={handleSaveSettings}
+                  isLoading={saving}
+                  variant="primary"
+                  size="md"
+                  leftIcon={Save}
+                  className="w-full sm:w-auto"
+                >
+                  Save & Regenerate Plan
+                </Button>
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
+      </Card>
 
-        {/* Metabolic Info */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl">
-            <h3 className="text-2xl font-black text-white mb-6">Your Metabolic Rate 🔥</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl">
-                <span className="text-slate-300 font-semibold">BMR (Basal Metabolic Rate)</span>
-                <span className="text-3xl font-black text-cyan-400">{stats?.diet?.metrics?.bmr || 0} cal</span>
+      {/* ─── METABOLIC RATE & MACROS CARDS ─────────────────────────────── */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Metabolic Rate */}
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-amber-500" />
+              <span>Metabolic Energy Budget</span>
+            </CardTitle>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Scientifically calculated based on the Mifflin-St Jeor formula
+            </p>
+          </CardHeader>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5">
+              <div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Basal Metabolic Rate (BMR)
+                </p>
+                <p className="text-xs text-slate-400">Calories burned at complete rest</p>
               </div>
-              <div className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl">
-                <span className="text-slate-300 font-semibold">TDEE (Total Daily Energy)</span>
-                <span className="text-3xl font-black text-purple-400">{stats?.diet?.metrics?.tdee || 0} cal</span>
+              <span className="text-xl font-extrabold text-cyan-600 dark:text-cyan-400">
+                <AnimatedCounter value={stats?.diet?.metrics?.bmr || 0} suffix=" kcal" />
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5">
+              <div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Total Daily Energy (TDEE)
+                </p>
+                <p className="text-xs text-slate-400">Maintenance calories with your activity</p>
               </div>
+              <span className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
+                <AnimatedCounter value={stats?.diet?.metrics?.tdee || 0} suffix=" kcal" />
+              </span>
             </div>
           </div>
+        </Card>
 
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl">
-            <h3 className="text-2xl font-black text-white mb-6">Daily Macros Target 🎯</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl">
-                <span className="text-slate-300 font-semibold">Protein</span>
-                <span className="text-2xl font-black text-red-400">{stats?.diet?.macros?.protein || 0}g</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl">
-                <span className="text-slate-300 font-semibold">Carbs</span>
-                <span className="text-2xl font-black text-yellow-400">{stats?.diet?.macros?.carbs || 0}g</span>
-              </div>
-              <div className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl">
-                <span className="text-slate-300 font-semibold">Fats</span>
-                <span className="text-2xl font-black text-blue-400">{stats?.diet?.macros?.fats || 0}g</span>
-              </div>
+        {/* Daily Macros Target */}
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-cyan-500" />
+              <span>Daily Macronutrient Targets</span>
+            </CardTitle>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Optimized for {goalMap[user?.goal] || 'your body composition'}
+            </p>
+          </CardHeader>
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
+              <p className="text-xs font-bold text-rose-600 dark:text-rose-400">Protein</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                <AnimatedCounter value={stats?.diet?.macros?.protein || 0} suffix="g" />
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Muscle repair</p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400">Carbs</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                <AnimatedCounter value={stats?.diet?.macros?.carbs || 0} suffix="g" />
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Daily fuel</p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
+              <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Healthy Fats</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                <AnimatedCounter value={stats?.diet?.macros?.fats || 0} suffix="g" />
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Hormone balance</p>
             </div>
           </div>
-        </div>
-
-        {/* Weekly Progress */}
-        {stats?.progress?.summary && (
-          <div className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl mb-8">
-            <h3 className="text-2xl font-black text-white mb-6">Weekly Progress Summary 📊</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                <Calendar className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
-                <div className="text-3xl font-black text-white">
-                  {stats.progress.summary.totalDays}
-                </div>
-                <div className="text-sm text-slate-400 font-semibold">Days Tracked</div>
-              </div>
-
-              <div className="text-center p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                <Flame className="w-8 h-8 text-orange-400 mx-auto mb-3" />
-                <div className="text-3xl font-black text-white">
-                  {stats.progress.summary.averageCaloriesConsumed}
-                </div>
-                <div className="text-sm text-slate-400 font-semibold">Avg Calories/Day</div>
-              </div>
-
-              <div className="text-center p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                <Activity className="w-8 h-8 text-green-400 mx-auto mb-3" />
-                <div className="text-3xl font-black text-white">
-                  {stats.progress.summary.totalWorkouts}
-                </div>
-                <div className="text-sm text-slate-400 font-semibold">Total Workouts</div>
-              </div>
-
-              <div className="text-center p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                <TrendingUp className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-                <div className="text-3xl font-black text-white">
-                  {stats.progress.summary.weightChange > 0 ? '+' : ''}
-                  {stats.progress.summary.weightChange?.toFixed(1)} kg
-                </div>
-                <div className="text-sm text-slate-400 font-semibold">Weight Change</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <a href="/diet" className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-orange-500/30 hover:scale-105 hover:border-orange-500/50 transition-all group cursor-pointer">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg">
-              <Flame className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-black text-white mb-2">View Diet Plan</h3>
-            <p className="text-slate-400">Get your personalized Indian meal plan</p>
-          </a>
-
-          <a href="/workout" className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-green-500/30 hover:scale-105 hover:border-green-500/50 transition-all group cursor-pointer">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg">
-              <Activity className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-black text-white mb-2">Start Workout</h3>
-            <p className="text-slate-400">Access your custom exercise routine</p>
-          </a>
-
-          <a href="/todos" className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-blue-500/30 hover:scale-105 hover:border-blue-500/50 transition-all group cursor-pointer">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg">
-              <span className="text-4xl">✅</span>
-            </div>
-            <h3 className="text-xl font-black text-white mb-2">My Tasks</h3>
-            <p className="text-slate-400">Track your daily fitness tasks</p>
-          </a>
-
-          <a href="/chatbot" className="glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl hover:shadow-purple-500/30 hover:scale-105 hover:border-purple-500/50 transition-all group cursor-pointer">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-lg">
-              <span className="text-4xl">🤖</span>
-            </div>
-            <h3 className="text-xl font-black text-white mb-2">Ask NutriBot</h3>
-            <p className="text-slate-400">Get instant fitness and diet advice</p>
-          </a>
-        </div>
-
-        {/* Tips Section */}
-        {stats?.diet?.tips && (
-          <div className="mt-8 glass-dark p-6 rounded-2xl border border-white/10 shadow-2xl">
-            <h3 className="text-2xl font-black text-white mb-6">💡 Tips for Your Goal</h3>
-            <ul className="space-y-2">
-              {stats.diet.tips.map((tip, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-cyan-400 mr-3 text-xl">✓</span>
-                  <span className="text-slate-300">{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        </Card>
       </div>
+
+      {/* ─── WEEKLY PROGRESS STATS SUMMARY ─────────────────────────────── */}
+      {stats?.progress?.summary && (
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              <span>Weekly Progress Summary</span>
+            </CardTitle>
+          </CardHeader>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+              <Calendar className="w-5 h-5 text-cyan-500 mx-auto mb-2" />
+              <div className="text-2xl font-black text-slate-900 dark:text-white">
+                <AnimatedCounter value={stats.progress.summary.totalDays || 0} />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Days Tracked</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+              <Flame className="w-5 h-5 text-amber-500 mx-auto mb-2" />
+              <div className="text-2xl font-black text-slate-900 dark:text-white">
+                <AnimatedCounter value={stats.progress.summary.averageCaloriesConsumed || 0} />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Avg Calories / Day</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+              <Dumbbell className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
+              <div className="text-2xl font-black text-slate-900 dark:text-white">
+                <AnimatedCounter value={stats.progress.summary.totalWorkouts || 0} />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Workouts</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+              <Activity className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
+              <div className="text-2xl font-black text-slate-900 dark:text-white">
+                {stats.progress.summary.weightChange > 0 ? '+' : ''}
+                <AnimatedCounter value={stats.progress.summary.weightChange || 0} decimals={1} suffix=" kg" />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Weight Shift</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* ─── QUICK ACTIONS GRID ────────────────────────────────────────── */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link to="/diet">
+          <Card hoverEffect glow="cyan" className="p-5 h-full flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-md shadow-cyan-500/20">
+                <Utensils className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                Indian Diet Plan
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                View weekly meal slots and mark today's meals complete
+              </p>
+            </div>
+            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-4 flex items-center gap-1">
+              Open Diet Plan <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </Card>
+        </Link>
+
+        <Link to="/workout">
+          <Card hoverEffect glow="accent" className="p-5 h-full flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center mb-4 shadow-md shadow-emerald-500/20">
+                <Dumbbell className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                Workout Routines
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Targeted 7-day routine tailored to your fitness level
+              </p>
+            </div>
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-4 flex items-center gap-1">
+              Start Workout <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </Card>
+        </Link>
+
+        <Link to="/todos">
+          <Card hoverEffect glow="purple" className="p-5 h-full flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center mb-4 shadow-md shadow-indigo-500/20">
+                <CheckSquare className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                Daily Habits & Tasks
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Check off hydration, workout sets, and vitamin routines
+              </p>
+            </div>
+            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-4 flex items-center gap-1">
+              View Tasks <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </Card>
+        </Link>
+
+        <Link to="/chatbot">
+          <Card hoverEffect glow="cyan" className="p-5 h-full flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 text-white flex items-center justify-center mb-4 shadow-md shadow-cyan-500/20">
+                <Bot className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                NutriBot Assistant
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Instant nutrition guidance and Indian diet coaching
+              </p>
+            </div>
+            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-4 flex items-center gap-1">
+              Ask AI <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </Card>
+        </Link>
+      </div>
+
+      {/* ─── TIPS SECTION ──────────────────────────────────────────────── */}
+      {stats?.diet?.tips && stats.diet.tips.length > 0 && (
+        <Card className="p-6 border-amber-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Lightbulb className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Personalized Recommendations
+            </h3>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {stats.diet.tips.map((tip, index) => (
+              <div
+                key={index}
+                className="p-3.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300"
+              >
+                <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
+                <span>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

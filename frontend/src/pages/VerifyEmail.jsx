@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MailCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MailCheck, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Button, Card } from '../components/ui';
 
 const RESEND_COOLDOWN_SECONDS = 30;
 
@@ -35,7 +37,7 @@ const VerifyEmail = () => {
       await verifyEmail(email, code);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Verification failed. Please try again.');
+      setError(err.response?.data?.message || 'Verification failed. Please check the 6-digit code.');
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ const VerifyEmail = () => {
 
   const handleResend = async () => {
     if (!email) {
-      setError('Enter your email address first.');
+      setError('Please enter your email address first.');
       return;
     }
     setError('');
@@ -52,60 +54,76 @@ const VerifyEmail = () => {
 
     try {
       await resendVerificationCode(email);
-      setInfo('A new code has been sent to your email.');
+      setInfo('A new 6-digit verification code has been dispatched to your email.');
       setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not resend code. Please try again.');
+      setError(err.response?.data?.message || 'Could not resend code. Please try again later.');
     } finally {
       setResending(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 py-12 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="max-w-md w-full relative z-10 animate-fade-in">
-        <div className="glass-dark rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 transform hover:scale-110 hover:rotate-6 transition-all duration-300">
-                <MailCheck className="w-10 h-10 text-white" />
-              </div>
-            </div>
-            <h2 className="text-4xl font-black text-white mb-3">Verify Your Email</h2>
-            <p className="text-slate-400 text-lg">
-              Enter the 6-digit code we sent to{' '}
-              {emailFromState ? (
-                <span className="text-cyan-400 font-semibold">{emailFromState}</span>
-              ) : (
-                'your email'
-              )}
-            </p>
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-12 relative">
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="max-w-md w-full"
+      >
+        <Card className="p-8 sm:p-10 shadow-2xl border-slate-200/80 dark:border-white/10 text-center">
+          {/* Icon Header */}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/25 text-white mb-5">
+            <MailCheck className="w-8 h-8" />
           </div>
 
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
+            Verify Your Email
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+            Enter the 6-digit verification code sent to{' '}
+            {emailFromState ? (
+              <span className="font-semibold text-cyan-600 dark:text-cyan-400 block sm:inline">
+                {emailFromState}
+              </span>
+            ) : (
+              'your inbox'
+            )}
+          </p>
+
+          {/* Feedback banners */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/20 backdrop-blur-sm border border-red-500/50 rounded-xl flex items-start space-x-3 animate-slide-up">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-300 font-semibold">{error}</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1, x: [-8, 8, -6, 6, -3, 3, 0] }}
+              transition={{ duration: 0.4 }}
+              className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start text-left gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-rose-700 dark:text-rose-300 leading-snug">
+                {error}
+              </p>
+            </motion.div>
           )}
 
           {info && (
-            <div className="mb-6 p-4 bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/50 rounded-xl flex items-start space-x-3 animate-slide-up">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-emerald-300 font-semibold">{info}</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start text-left gap-3"
+            >
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 leading-snug">
+                {info}
+              </p>
+            </motion.div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {!emailFromState && (
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
+              <div className="text-left">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -114,57 +132,71 @@ const VerifyEmail = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
+                  className="w-full px-4 py-3 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-bold text-slate-300 mb-3">
-                Verification Code
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
+                Security Code
               </label>
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength="6"
+                pattern="[0-9]*"
+                maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 required
-                placeholder="123456"
-                className="w-full px-4 py-4 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-black text-center text-3xl tracking-[0.5em] transition-all"
+                autoFocus
+                placeholder="••••••"
+                className="w-full px-4 py-4 text-center text-3xl font-black tracking-[0.4em] sm:tracking-[0.5em] rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-inner"
               />
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
               disabled={loading || code.length !== 6}
-              className="group w-full py-4 px-6 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg relative overflow-hidden"
+              isLoading={loading}
+              rightIcon={ArrowRight}
+              className="w-full justify-center text-sm font-bold shadow-lg shadow-cyan-500/25"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="relative z-10">{loading ? 'Verifying...' : 'Verify Email'}</span>
-            </button>
+              Verify & Enter NutriGenie
+            </Button>
           </form>
 
-          <div className="mt-8 text-center space-y-3">
-            <p className="text-slate-400">
-              Didn't get the code?{' '}
+          {/* Resend Actions */}
+          <div className="mt-8 pt-6 border-t border-slate-200/80 dark:border-white/10 space-y-3">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Didn't receive the verification email?{' '}
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={resending || cooldown > 0}
-                className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors duration-300 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
               >
-                {cooldown > 0 ? `Resend in ${cooldown}s` : resending ? 'Sending...' : 'Resend code'}
+                {cooldown > 0
+                  ? `Resend in ${cooldown}s`
+                  : resending
+                  ? 'Sending...'
+                  : 'Resend code'}
               </button>
             </p>
-            <p className="text-slate-500 text-sm">
-              <Link to="/login" className="hover:text-cyan-400 transition-colors">
-                Back to login
+
+            <div>
+              <Link
+                to="/login"
+                className="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                ← Back to Login
               </Link>
-            </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </Card>
+      </motion.div>
     </div>
   );
 };

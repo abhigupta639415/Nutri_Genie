@@ -1,556 +1,519 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Heart, TrendingUp, Brain, Award, Users, CheckCircle, ChevronDown, Sparkles, Zap, Target, Dumbbell, Apple, Activity } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  Utensils,
+  Dumbbell,
+  LineChart,
+  Bot,
+  Scan,
+  Activity,
+  Quote,
+  Star,
+  Target,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Button, Card, Badge } from '../components/ui';
+
+const capabilityPillars = [
+  {
+    icon: Utensils,
+    title: '100% Indian Ingredients',
+    sub: 'From Rotis, Dals & Sabzis to Regional Thalis & Millets',
+  },
+  {
+    icon: Target,
+    title: 'Macro-Balanced Plans',
+    sub: 'Pure Veg, Vegan, Non-Veg & Diabetic-Friendly',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Dietitian Guardrails',
+    sub: 'Anti-carb stacking, daily variety & protein adequacy',
+  },
+  {
+    icon: Activity,
+    title: 'AI Plate Scanner & NutriBot',
+    sub: 'Instant photo analysis & 24/7 nutrition coaching',
+  },
+];
+
+const features = [
+  {
+    icon: Utensils,
+    title: 'Authentic Indian Nutrition AI',
+    description:
+      'Unlike western apps, NutriGenie accurately calculates calories & macros for rotis, parathas, paneer bhurji, sambar, biryani, and regional dishes.',
+    badge: 'Indian Cuisine',
+    gradient: 'from-cyan-500 to-teal-500',
+  },
+  {
+    icon: Dumbbell,
+    title: 'Adaptive Home & Gym Workouts',
+    description:
+      'Personalized 7-day training cycles combining Yoga asanas, HIIT cardio, and progressive hypertrophy routines tailored to your fitness level.',
+    badge: 'Hybrid Training',
+    gradient: 'from-teal-500 to-emerald-500',
+  },
+  {
+    icon: Scan,
+    title: 'Smart Food Scanner',
+    description:
+      'Snap a photo of your plate. Our computer vision model identifies the food item, estimates portion size, and logs calories automatically.',
+    badge: 'Computer Vision',
+    gradient: 'from-blue-500 to-indigo-500',
+  },
+  {
+    icon: Bot,
+    title: 'NutriBot 24/7 Companion',
+    description:
+      'Have queries about intermittent fasting, late-night Indian snacks, or pre-workout carbs? NutriBot offers evidence-backed coaching anytime.',
+    badge: 'Gemini AI Powered',
+    gradient: 'from-indigo-500 to-purple-500',
+  },
+  {
+    icon: LineChart,
+    title: 'Bio-Metric Progress Analytics',
+    description:
+      'Interactive trend charts track weight trajectories, weekly calorie deficits, water hydration habits, and mood correlations.',
+    badge: 'Data-Driven',
+    gradient: 'from-emerald-500 to-cyan-500',
+  },
+  {
+    icon: Target,
+    title: 'Dietary Lifestyle Flexibility',
+    description:
+      'Full support for Pure Vegetarian, Jain, Eggetarian, Non-Veg, High-Protein, and Diabetic-friendly Indian meal compositions.',
+    badge: 'Personalized',
+    gradient: 'from-amber-500 to-rose-500',
+  },
+];
+
+const howItWorks = [
+  {
+    step: '01',
+    title: 'Input Your Bio-Metrics & Cuisine Preference',
+    description:
+      'Set your age, weight, height, daily activity level, and dietary style (Vegetarian, Jain, Eggetarian, Non-Veg).',
+    icon: Activity,
+  },
+  {
+    step: '02',
+    title: 'AI Crafts Your Custom Routine',
+    description:
+      'Our nutrition engine generates target calories, macros, and scheduled meal slots using wholesome Indian ingredients.',
+    icon: Sparkles,
+  },
+  {
+    step: '03',
+    title: 'Execute, Track & Celebrate Milestones',
+    description:
+      'Check off meals, log workout days, scan your meals on the go, and watch your body transform week after week.',
+    icon: ShieldCheck,
+  },
+];
+
+const testimonials = [
+  {
+    name: 'Priya Sharma',
+    role: 'Software Engineer, Bengaluru',
+    change: 'Lost 14 kg in 4 Months',
+    text: 'Every other fitness app told me to eat oatmeal and bland chicken breast. NutriGenie built my deficit around paneer parathas, dal tadka, and curd. I lost 14 kg without ever feeling deprived.',
+    rating: 5,
+  },
+  {
+    name: 'Rahul Verma',
+    role: 'Product Manager, Delhi NCR',
+    change: 'Gained 7 kg Lean Muscle',
+    text: 'Getting enough vegetarian protein on an Indian diet was tough until NutriGenie mapped out high-protein soya, sattu, sprouted moong, and whey combos. The workout recommendations are spot on.',
+    rating: 5,
+  },
+  {
+    name: 'Anjali Patel',
+    role: 'Architect, Ahmedabad',
+    change: 'Reversed Pre-Diabetes & Toned Up',
+    text: 'The Jain diet option is amazing. Finding an app that actually respects no-root-vegetables while maintaining perfect nutritional balance was life-changing. Highly recommend to everyone.',
+    rating: 5,
+  },
+];
 
 const Landing = () => {
-  const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState({});
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible((prev) => ({ ...prev, [entry.target.id]: true }));
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    document.querySelectorAll('[id^="section-"]').forEach((el) => {
-      observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveTestimonial((prev) => (prev + 1) % 3);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const features = [
-    {
-      icon: <Brain className="w-12 h-12" />,
-      title: 'AI-Powered Plans',
-      description: 'Get personalized diet and workout plans based on your goals, body metrics, and preferences',
-      gradient: 'from-cyan-500 to-blue-500'
-    },
-    {
-      icon: <Apple className="w-12 h-12" />,
-      title: 'Indian Cuisine Focus',
-      description: 'Authentic Indian meal plans with nutritional breakdowns for local dishes you love',
-      gradient: 'from-orange-500 to-red-500'
-    },
-    {
-      icon: <TrendingUp className="w-12 h-12" />,
-      title: 'Progress Tracking',
-      description: 'Visual charts and analytics to track calories, weight, workouts, and overall progress',
-      gradient: 'from-green-500 to-emerald-500'
-    },
-    {
-      icon: <Dumbbell className="w-12 h-12" />,
-      title: 'Custom Workouts',
-      description: 'Home or gym workouts including Yoga, HIIT, Cardio, and Strength training',
-      gradient: 'from-purple-500 to-pink-500'
-    },
-    {
-      icon: <Users className="w-12 h-12" />,
-      title: 'NutriBot Assistant',
-      description: 'Chat with our AI bot for instant answers to diet, fitness, and nutrition queries',
-      gradient: 'from-indigo-500 to-purple-500'
-    },
-    {
-      icon: <Target className="w-12 h-12" />,
-      title: 'Goal Achievement',
-      description: 'Whether it\'s weight loss, gain, or maintenance - we\'ve got you covered',
-      gradient: 'from-yellow-500 to-orange-500'
-    }
-  ];
-
-  const testimonials = [
-    { name: 'Priya Sharma', role: 'Lost 15kg', text: 'NutriGenie changed my life! The AI-powered meal plans fit perfectly with my Indian diet preferences.' },
-    { name: 'Rahul Verma', role: 'Gained Muscle', text: 'The workout plans are fantastic! I gained 8kg of muscle in just 4 months.' },
-    { name: 'Anjali Patel', role: 'Healthier Lifestyle', text: 'Finally, a fitness app that understands Indian cuisine and lifestyle. Highly recommended!' }
-  ];
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
-      {/* Animated Background Grid */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        <div className="absolute top-20 left-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-32 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <div className="text-center lg:text-left z-10 space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm border border-cyan-500/30 rounded-full text-cyan-300 text-sm font-semibold mb-4 shadow-lg shadow-cyan-500/20">
-                <Sparkles className="w-4 h-4 animate-pulse" />
-                <span>AI-Powered Fitness Revolution</span>
-              </div>
-              
-              <h1 className="text-6xl md:text-8xl font-black text-white leading-none tracking-tight">
-                Transform
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mt-3 animate-gradient-x">
-                  Your Body
-                </span>
-              </h1>
-              
-              <p className="text-xl text-slate-300 max-w-2xl leading-relaxed">
-                Get AI-powered diet plans, custom workouts, and real-time guidance tailored for Indian lifestyle and authentic cuisine
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                <button 
-                  onClick={() => navigate('/register')}
-                  className="group px-10 py-5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white text-lg font-bold rounded-2xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 relative overflow-hidden"
-                >
-                  <span className="relative z-10">Start Your Journey</span>
-                  <Zap className="w-6 h-6 group-hover:rotate-12 transition-transform relative z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </button>
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="px-10 py-5 bg-slate-800/50 backdrop-blur-sm text-cyan-400 text-lg font-bold rounded-2xl border-2 border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-800 transition-all duration-300 shadow-lg hover:shadow-cyan-500/30"
-                >
-                  Login
-                </button>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-6 pt-12">
-                {[
-                  { value: '10K+', label: 'Active Users' },
-                  { value: '50K+', label: 'Meal Plans' },
-                  { value: '95%', label: 'Success Rate' }
-                ].map((stat, index) => (
-                  <div key={index} className="text-center lg:text-left backdrop-blur-sm bg-white/5 rounded-2xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300">
-                    <div className="text-4xl font-black bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">{stat.value}</div>
-                    <div className="text-sm text-slate-400 font-medium mt-1">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
+    <div className="relative overflow-hidden">
+      {/* ─── HERO SECTION ──────────────────────────────────────────────── */}
+      <section className="relative pt-12 sm:pt-20 pb-20 sm:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left Hero Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="lg:col-span-7 space-y-6 text-center lg:text-left"
+          >
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs sm:text-sm font-semibold shadow-sm">
+              <Sparkles className="w-4 h-4 text-cyan-500 animate-pulse" />
+              <span>India's #1 AI Diet & Fitness Platform</span>
             </div>
 
-            {/* Right - Hero Image with Real Fitness Photo */}
-            <div className="relative lg:h-[600px] animate-fade-in animation-delay-500">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-3xl transform rotate-6 opacity-20 blur-2xl"></div>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-sm bg-gradient-to-br from-slate-800/50 to-purple-900/50">
-                <img 
-                  src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&h=1000&fit=crop" 
-                  alt="Fitness transformation" 
-                  className="w-full h-[600px] object-cover opacity-80 hover:opacity-90 transition-opacity duration-500"
-                />
-                
-                {/* Overlay Stats Card */}
-                <div className="absolute bottom-8 left-8 right-8 bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 animate-slide-up">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <Activity className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-white text-lg">Today's Progress</div>
-                      <div className="text-sm text-cyan-400">You're doing great! 💪</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3 mb-4">
-                    {[
-                      { label: 'Calories', value: '1,850', max: '2,000', percent: 92 },
-                      { label: 'Workout', value: '45', max: '60 min', percent: 75 },
-                      { label: 'Water', value: '6', max: '8 glasses', percent: 75 }
-                    ].map((item, i) => (
-                      <div key={i} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-300">{item.label}</span>
-                          <span className="text-cyan-400 font-semibold">{item.value}/{item.max}</span>
-                        </div>
-                        <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                          <div 
-                            className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out"
-                            style={{ width: `${item.percent}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-slate-900 dark:text-white">
+              Smarter Nutrition,{' '}
+              <span className="bg-gradient-to-r from-cyan-500 via-teal-400 to-indigo-600 bg-clip-text text-transparent">
+                Rooted in Indian Food
+              </span>
+            </h1>
 
-          {/* Scroll Indicator */}
-          <div className="flex justify-center mt-16 animate-bounce">
-            <ChevronDown className="w-8 h-8 text-cyan-400" />
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="section-features" className={`py-24 relative transition-all duration-1000 ${isVisible['section-features'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
-              Why Choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">NutriGenie?</span>
-            </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              Everything you need to achieve your fitness goals, powered by cutting-edge AI
+            {/* Subheadline */}
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed mx-auto lg:mx-0">
+              Personalized Indian diet plans, calorie & macro tracking, adaptive home/gym workouts, and 24/7 AI health coaching — designed specifically for your lifestyle and taste.
             </p>
-          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group relative bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-white/10 hover:border-cyan-500/50 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Gradient background on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-                
-                <div className="relative z-10">
-                  <div className={`mb-6 w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} p-3 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}>
-                    {React.cloneElement(feature.icon, { className: 'w-full h-full text-white' })}
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors duration-300">
-                    {feature.title}
-                  </h3>
-                  <p className="text-slate-400 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-
-                {/* Corner accent */}
-                <div className={`absolute -top-12 -right-12 w-24 h-24 bg-gradient-to-br ${feature.gradient} rounded-full opacity-20 group-hover:scale-150 transition-transform duration-700`}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Visual Showcase Section with Images */}
-      <section className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8 animate-fade-in">
-              <h2 className="text-5xl font-black text-white leading-tight">
-                Track Every
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-                  Milestone
-                </span>
-              </h2>
-              <p className="text-xl text-slate-400 leading-relaxed">
-                Monitor your progress with beautiful visualizations, detailed analytics, and AI-powered insights that keep you motivated every step of the way.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: <TrendingUp className="w-6 h-6" />, text: 'Real-time progress tracking' },
-                  { icon: <Brain className="w-6 h-6" />, text: 'AI-powered recommendations' },
-                  { icon: <Award className="w-6 h-6" />, text: 'Achievement badges & rewards' }
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 text-slate-300 hover:text-cyan-400 transition-colors duration-300">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-                      {item.icon}
-                    </div>
-                    <span className="text-lg font-semibold">{item.text}</span>
-                  </div>
-                ))}
-              </div>
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <Link to={user ? '/dashboard' : '/register'} className="w-full sm:w-auto">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  rightIcon={ArrowRight}
+                  className="w-full sm:w-auto text-base shadow-lg shadow-cyan-500/25"
+                >
+                  {user ? 'Open Dashboard' : 'Get Started Free'}
+                </Button>
+              </Link>
+              <a href="#how-it-works" className="w-full sm:w-auto">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto text-base">
+                  See How It Works
+                </Button>
+              </a>
             </div>
-            <div className="relative animate-fade-in animation-delay-500">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl transform -rotate-6 opacity-20 blur-2xl"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=600&fit=crop" 
-                alt="Gym workout" 
-                className="relative rounded-3xl shadow-2xl border border-white/10 hover:scale-105 transition-transform duration-500"
-              />
+
+            {/* Social proof bullet points */}
+            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                No credit card required
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                Veg, Non-Veg, Jain & Eggetarian
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                Instant Gemini AI Analysis
+              </span>
             </div>
-          </div>
-        </div>
-      </section>
+          </motion.div>
 
-      {/* How It Works */}
-      <section id="section-how" className={`py-24 relative transition-all duration-1000 ${isVisible['section-how'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/20 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <h2 className="text-5xl md:text-6xl font-black text-center text-white mb-20">
-            Get Started in <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">4 Simple Steps</span>
-          </h2>
+          {/* Right Hero Visual Card */}
+          <div className="lg:col-span-5 relative">
+            {/* Ambient Backlight Glow */}
+            <div className="absolute -inset-2 bg-gradient-to-tr from-cyan-500/25 via-teal-500/20 to-indigo-500/30 rounded-3xl blur-2xl -z-10" />
 
-          <div className="grid md:grid-cols-4 gap-8 relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute top-12 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-30"></div>
-            
-            {[
-              { step: '1', title: 'Sign Up', desc: 'Create your account in seconds', icon: <Users className="w-6 h-6" />, color: 'from-cyan-500 to-blue-500' },
-              { step: '2', title: 'Set Profile', desc: 'Tell us about your goals', icon: <Target className="w-6 h-6" />, color: 'from-purple-500 to-pink-500' },
-              { step: '3', title: 'Get AI Plan', desc: 'Receive personalized plans', icon: <Brain className="w-6 h-6" />, color: 'from-pink-500 to-orange-500' },
-              { step: '4', title: 'Track Progress', desc: 'Monitor your journey', icon: <TrendingUp className="w-6 h-6" />, color: 'from-orange-500 to-yellow-500' }
-            ].map((item, index) => (
-              <div key={index} className="text-center animate-fade-in relative z-10" style={{ animationDelay: `${index * 200}ms` }}>
-                <div className="relative mx-auto mb-6">
-                  <div className={`w-24 h-24 bg-gradient-to-br ${item.color} text-white rounded-2xl flex items-center justify-center text-3xl font-black mx-auto shadow-2xl transform hover:scale-110 hover:rotate-6 transition-all duration-300`}>
-                    {item.step}
-                  </div>
-                  <div className={`absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-br ${item.color} rounded-full flex items-center justify-center shadow-xl border-4 border-slate-900`}>
-                    {item.icon}
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">{item.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Nutrition Section with Image */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="relative animate-fade-in order-2 lg:order-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 rounded-3xl transform rotate-6 opacity-20 blur-2xl"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=600&fit=crop" 
-                alt="Healthy Indian food" 
-                className="relative rounded-3xl shadow-2xl border border-white/10 hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            <div className="space-y-8 animate-fade-in order-1 lg:order-2">
-              <h2 className="text-5xl font-black text-white leading-tight">
-                Nutrition Made
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">
-                  Delicious
-                </span>
-              </h2>
-              <p className="text-xl text-slate-400 leading-relaxed">
-                Enjoy authentic Indian meals while hitting your fitness goals. Our AI understands your cuisine preferences and creates meal plans you'll actually love.
-              </p>
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { emoji: '🍛', label: 'Indian Cuisine', value: '1000+' },
-                  { emoji: '🥗', label: 'Healthy Recipes', value: '500+' },
-                  { emoji: '🔥', label: 'Calories Tracked', value: '10M+' },
-                  { emoji: '⭐', label: 'User Rating', value: '4.9/5' }
-                ].map((item, i) => (
-                  <div key={i} className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 hover:border-green-500/50 transition-all duration-300 hover:bg-white/10">
-                    <div className="text-4xl mb-2">{item.emoji}</div>
-                    <div className="text-2xl font-bold text-white">{item.value}</div>
-                    <div className="text-sm text-slate-400">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="section-testimonials" className={`py-24 relative transition-all duration-1000 ${isVisible['section-testimonials'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
-        <div className="max-w-5xl mx-auto px-4 relative z-10">
-          <h2 className="text-5xl md:text-6xl font-black text-center text-white mb-20">
-            Success <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Stories</span>
-          </h2>
-
-          <div className="relative bg-slate-800/50 backdrop-blur-xl rounded-3xl p-12 md:p-16 shadow-2xl border border-white/10">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className={`transition-all duration-500 ${index === activeTestimonial ? 'opacity-100 block' : 'opacity-0 hidden'}`}
-              >
-                <div className="text-cyan-400 text-7xl mb-6 leading-none">"</div>
-                <p className="text-2xl text-slate-300 mb-8 italic leading-relaxed">
-                  {testimonial.text}
-                </p>
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">
-                    {testimonial.name.charAt(0)}
+            {/* Interactive Preview Glass Card */}
+            <div className="glass-panel rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200/80 dark:border-white/15">
+              {/* Card Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/10">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                    NG
                   </div>
                   <div>
-                    <div className="font-bold text-white text-xl">{testimonial.name}</div>
-                    <div className="text-cyan-400 text-lg font-semibold">{testimonial.role}</div>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Daily Health Snapshot
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Target: 1,850 kcal • High Protein
+                    </p>
                   </div>
                 </div>
+                <Badge variant="accent" size="sm" dot>
+                  On Track
+                </Badge>
               </div>
-            ))}
 
-            {/* Dots */}
-            <div className="flex justify-center gap-3 mt-12">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`h-3 rounded-full transition-all duration-300 ${index === activeTestimonial ? 'bg-cyan-500 w-12 shadow-lg shadow-cyan-500/50' : 'bg-slate-600 w-3 hover:bg-slate-500'}`}
-                />
-              ))}
+              {/* Nutrition Architecture Row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Daily Energy</p>
+                  <p className="text-lg font-extrabold text-cyan-600 dark:text-cyan-400 mt-0.5">1,850</p>
+                  <p className="text-[10px] text-slate-400">kcal • 4 Slots</p>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Protein Target</p>
+                  <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">110g</p>
+                  <p className="text-[10px] text-slate-400">Goal Calibrated</p>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Diet Style</p>
+                  <p className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">Regional</p>
+                  <p className="text-[10px] text-slate-400">Indian Cuisine</p>
+                </div>
+              </div>
+
+              {/* Sample Indian Meal Slot */}
+              <div className="p-4 rounded-2xl bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200/70 dark:border-white/5 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">☀️ Balanced Lunch Thali</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">520 kcal</span>
+                </div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  Paneer Bhurji (150g) + 2 Phulkas + Sprouted Moong Salad
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 font-medium">P: 28g</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 font-medium">C: 45g</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-300 font-medium">F: 16g</span>
+                </div>
+              </div>
+
+              {/* Workout recommendation chip */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/20 text-xs font-semibold">
+                <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <Dumbbell className="w-4 h-4 text-cyan-500" />
+                  <span>Today's Routine: Upper Body Hypertrophy & Yoga</span>
+                </div>
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">45 min</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 opacity-90"></div>
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
-        <img 
-          src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&h=600&fit=crop" 
-          alt="Fitness motivation" 
-          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30"
-        />
-        
-        <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
-            Ready to Transform Your Lifestyle?
+      {/* ─── CAPABILITIES STRIP ─────────────────────────────────────────── */}
+      <section className="py-10 border-y border-slate-200/80 dark:border-white/10 bg-slate-100/50 dark:bg-slate-900/30 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {capabilityPillars.map((pillar) => {
+              const Icon = pillar.icon;
+              return (
+                <div
+                  key={pillar.title}
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-slate-200/40 dark:border-white/5"
+                >
+                  <div className="p-2.5 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 shrink-0">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                      {pillar.title}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {pillar.sub}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURE GRID SECTION ──────────────────────────────────────── */}
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <Badge variant="brand" size="md">
+            Complete Health Ecosystem
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+            Engineered for Indian Bodies & Palates
           </h2>
-          <p className="text-2xl text-white/90 mb-12 leading-relaxed">
-            Join thousands of users achieving their fitness goals with NutriGenie
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">
+            Nutrition isn't one-size-fits-all. NutriGenie understands the cultural nuances of Indian meals, festivals, fasting, and everyday home-cooked recipes.
           </p>
-          <button 
-            onClick={() => navigate('/register')}
-            className="group px-12 py-6 bg-white text-purple-600 text-xl font-black rounded-2xl hover:bg-slate-100 transition-all duration-300 shadow-2xl transform hover:scale-110 inline-flex items-center gap-3"
-          >
-            Get Started Free
-            <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-          </button>
-          <p className="text-white/80 mt-6 text-lg">No credit card required • 7-day free trial</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {features.map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.45, delay: i * 0.08 }}
+              >
+                <Card hoverEffect glow="cyan" className="h-full flex flex-col p-6 sm:p-7">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white shadow-md shadow-cyan-500/20`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <Badge variant="neutral" size="sm">
+                      {feature.badge}
+                    </Badge>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2.5">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed flex-1">
+                    {feature.description}
+                  </p>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 border-t border-white/10 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white fill-current" />
-              </div>
-              <span className="text-3xl font-black bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">NutriGenie</span>
-            </div>
-            <p className="text-slate-400 mb-3 text-lg">
-              © 2024 NutriGenie. Your AI-Powered Fitness Companion
-            </p>
-            <p className="text-slate-500">
-              Made with ❤️ by the NutriGenie team. All rights reserved.
-            </p>
+      {/* ─── HOW IT WORKS SECTION ──────────────────────────────────────── */}
+      <section id="how-it-works" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/10">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <Badge variant="accent" size="md">
+            Simple 3-Step Process
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+            How NutriGenie Works
+          </h2>
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">
+            From onboarding to your daily meals in under two minutes.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 relative">
+          {howItWorks.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={step.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.15 }}
+                className="relative"
+              >
+                <div className="glass-panel rounded-3xl p-7 sm:p-8 h-full flex flex-col relative overflow-hidden">
+                  <span className="text-5xl font-black text-cyan-500/20 dark:text-cyan-400/15 absolute top-5 right-6">
+                    {step.step}
+                  </span>
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-6">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIALS SECTION ──────────────────────────────────────── */}
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-200/80 dark:border-white/10">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <Badge variant="purple" size="md">
+            Real Transformations
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+            Loved by Fitness Enthusiasts Across India
+          </h2>
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">
+            Real people achieving sustainable results without giving up their favorite foods.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={t.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: i * 0.1 }}
+            >
+              <Card className="h-full flex flex-col p-6 sm:p-7 relative">
+                <Quote className="w-8 h-8 text-cyan-500/20 absolute top-6 right-6" />
+                <div className="flex items-center space-x-1 text-amber-400 mb-4">
+                  {[...Array(t.rating)].map((_, idx) => (
+                    <Star key={idx} className="w-4 h-4 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 italic mb-6 flex-1 leading-relaxed">
+                  "{t.text}"
+                </p>
+                <div className="pt-4 border-t border-slate-200/80 dark:border-white/10">
+                  <div className="font-bold text-slate-900 dark:text-white text-base">
+                    {t.name}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t.role}
+                  </div>
+                  <div className="mt-2 inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    {t.change}
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── FINAL CONVERSION CTA ───────────────────────────────────────── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="relative rounded-3xl overflow-hidden glass-panel p-8 sm:p-14 text-center space-y-6 border border-cyan-500/30 shadow-2xl">
+          <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br from-cyan-500/30 to-indigo-600/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-to-tr from-teal-500/30 to-emerald-500/30 rounded-full blur-3xl pointer-events-none" />
+
+          <Badge variant="brand" size="md">
+            Start Your Journey Today
+          </Badge>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight max-w-2xl mx-auto">
+            Ready to Transform Your Body with Food You Actually Love?
+          </h2>
+
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
+            Join thousands of Indians achieving their health and fitness goals with personalized AI guidance.
+          </p>
+
+          <div className="pt-2">
+            <Link to={user ? '/dashboard' : '/register'}>
+              <Button variant="primary" size="lg" rightIcon={ArrowRight} className="text-base shadow-xl">
+                {user ? 'Go to Your Dashboard' : 'Create Your Free Account'}
+              </Button>
+            </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ────────────────────────────────────────────────────── */}
+      <footer className="border-t border-slate-200/80 dark:border-white/10 py-12 px-4 sm:px-6 lg:px-8 bg-slate-100/40 dark:bg-slate-900/40">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+              NG
+            </div>
+            <span className="font-bold text-slate-800 dark:text-white">NutriGenie</span>
+            <span>• AI Diet & Fitness Platform</span>
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <Link to="/login" className="hover:text-cyan-500 transition-colors">
+              Login
+            </Link>
+            <Link to="/register" className="hover:text-cyan-500 transition-colors">
+              Register
+            </Link>
+            <a href="#how-it-works" className="hover:text-cyan-500 transition-colors">
+              How it works
+            </a>
+          </div>
+
+          <p className="text-xs">
+            © {new Date().getFullYear()} NutriGenie. Designed for Indian health & wellness.
+          </p>
         </div>
       </footer>
-
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.2);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
-
-        @keyframes gradient-x {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 1s ease-out forwards;
-          opacity: 0;
-        }
-
-        .animate-slide-up {
-          animation: slide-up 1s ease-out 0.5s forwards;
-          opacity: 0;
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animate-gradient-x {
-          background-size: 200% 200%;
-          animation: gradient-x 3s ease infinite;
-        }
-
-        .animation-delay-500 {
-          animation-delay: 500ms;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(-25%);
-            animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-          }
-          50% {
-            transform: translateY(0);
-            animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-          }
-        }
-
-        .animate-bounce {
-          animation: bounce 1s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        .animate-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 };

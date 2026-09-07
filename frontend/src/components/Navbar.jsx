@@ -1,13 +1,40 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, X, Sun, Moon, LogOut, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Menu,
+  X,
+  Sun,
+  Moon,
+  LogOut,
+  LayoutDashboard,
+  Utensils,
+  Dumbbell,
+  LineChart,
+  CheckSquare,
+  Bot,
+  Scan,
+  Sparkles,
+} from 'lucide-react';
+import Button from './ui/Button';
+
+const navItems = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/diet', label: 'Diet Plan', icon: Utensils },
+  { path: '/workout', label: 'Workouts', icon: Dumbbell },
+  { path: '/progress', label: 'Progress', icon: LineChart },
+  { path: '/todos', label: 'Tasks', icon: CheckSquare },
+  { path: '/chatbot', label: 'NutriBot', icon: Bot },
+  { path: '/food-analyzer', label: 'Food Scan', icon: Scan },
+];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -17,119 +44,196 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="glass-dark border-b border-white/10 backdrop-blur-xl sticky top-0 z-50 shadow-xl shadow-purple-500/10">
+    <nav className="sticky top-0 z-50 w-full glass-panel border-b border-slate-200/80 dark:border-white/10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
-          <div className="flex items-center">
-            <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-3 group">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg shadow-cyan-500/30">
-                <span className="text-2xl">🧘‍♀️</span>
-              </div>
-              <span className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <Link
+            to={user ? '/dashboard' : '/'}
+            className="flex items-center space-x-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl"
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/25 group-hover:shadow-lg group-hover:shadow-cyan-500/40 group-hover:scale-105 transition-all duration-300">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 dark:from-cyan-400 dark:via-teal-300 dark:to-indigo-400 bg-clip-text text-transparent">
                 NutriGenie
               </span>
-            </Link>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 -mt-1 hidden sm:block">
+                Health & Nutrition AI
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {user ? (
+              navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`relative px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors flex items-center gap-2 ${
+                      isActive
+                        ? 'text-cyan-600 dark:text-cyan-300 font-bold'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-500' : 'text-slate-400'}`} />
+                    <span>{item.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="navbar-active-pill"
+                        className="absolute inset-0 bg-cyan-500/10 dark:bg-cyan-500/15 border border-cyan-500/30 rounded-xl -z-10 shadow-sm shadow-cyan-500/20"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link
+                  to="/"
+                  className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
+                    location.pathname === '/'
+                      ? 'text-cyan-600 dark:text-cyan-300 font-bold bg-cyan-500/10'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  }`}
+                >
+                  Home
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-2">
+          {/* Right Actions: Theme Toggle + Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
+            {/* Theme Toggle */}
+            <motion.button
+              whileTap={{ scale: 0.92, rotate: 15 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+              className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors border border-slate-200/80 dark:border-white/10"
+            >
+              {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+            </motion.button>
+
             {user ? (
-              <>
-                <Link to="/dashboard" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Dashboard
-                </Link>
-                <Link to="/diet" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Diet
-                </Link>
-                <Link to="/workout" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Workout
-                </Link>
-                <Link to="/progress" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Progress
-                </Link>
-                <Link to="/todos" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Tasks
-                </Link>
-                <Link to="/chatbot" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  NutriBot
-                </Link>
-                <Link to="/food-analyzer" className="px-4 py-2 text-slate-300 hover:text-cyan-400 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-lg">
-                  Food Scan
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:scale-105 font-semibold ml-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              </>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleLogout}
+                leftIcon={LogOut}
+                className="shadow-sm"
+              >
+                Logout
+              </Button>
             ) : (
               <>
-                <Link to="/login" className="px-5 py-2.5 text-cyan-400 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:bg-white/5 rounded-xl">
-                  Login
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
                 </Link>
-                <Link to="/register" className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 font-bold">
-                  Get Started
+                <Link to="/register">
+                  <Button variant="primary" size="sm">
+                    Get Started
+                  </Button>
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile Menu & Theme Toggle */}
+          <div className="flex md:hidden items-center space-x-2">
+            <button
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
+            >
+              {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl hover:bg-white/10 transition text-cyan-400"
+              aria-label="Toggle navigation menu"
+              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
+      {/* Mobile Menu Drawer */}
+      <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-2 border-t border-white/10 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="md:hidden border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-1.5 overflow-hidden shadow-2xl"
+          >
             {user ? (
               <>
-                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  Dashboard
-                </Link>
-                <Link to="/diet" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  Diet Plan
-                </Link>
-                <Link to="/workout" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  Workouts
-                </Link>
-                <Link to="/progress" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  Progress
-                </Link>
-                <Link to="/todos" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  My Tasks
-                </Link>
-                <Link to="/chatbot" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  NutriBot
-                </Link>
-                <Link to="/food-analyzer" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-slate-300 hover:text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
-                  Food Scan
-                </Link>
-                <button onClick={handleLogout} className="w-full text-left px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg font-semibold transition-all mt-2">
-                  Logout
-                </button>
+                {navItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                        isActive
+                          ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 font-bold border border-cyan-500/30'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-500' : 'text-slate-400'}`} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+                <div className="pt-3">
+                  <Button
+                    variant="danger"
+                    size="md"
+                    onClick={handleLogout}
+                    leftIcon={LogOut}
+                    className="w-full justify-center"
+                  >
+                    Logout
+                  </Button>
+                </div>
               </>
             ) : (
-              <>
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-cyan-400 hover:bg-white/5 rounded-xl font-semibold transition-all">
+              <div className="space-y-2 pt-2">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"
+                >
                   Login
                 </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg text-center font-bold transition-all">
-                  Get Started
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block"
+                >
+                  <Button variant="primary" size="md" className="w-full justify-center">
+                    Get Started Free
+                  </Button>
                 </Link>
-              </>
+              </div>
             )}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </nav>
   );
 };

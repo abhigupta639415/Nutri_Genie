@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, User, Mail, Lock, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  User,
+  Mail,
+  Lock,
+  AlertCircle,
+  Sparkles,
+  ArrowRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import { Button, Card } from '../components/ui';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,8 +25,10 @@ const Register = () => {
     height: '',
     goal: 'maintenance',
     activityLevel: 'moderate',
-    dietaryPreference: 'vegetarian'
+    dietaryPreference: 'vegetarian',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -24,8 +37,9 @@ const Register = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -33,245 +47,297 @@ const Register = () => {
     setError('');
     setLoading(true);
 
-    // Convert numeric fields
     const data = {
       ...formData,
-      age: parseInt(formData.age),
+      age: parseInt(formData.age, 10),
       weight: parseFloat(formData.weight),
-      height: parseFloat(formData.height)
+      height: parseFloat(formData.height),
     };
 
     try {
       const result = await register(data);
-      // Registration no longer logs the user in directly — send them to
-      // enter the code that was just emailed to them.
-      navigate('/verify-email', { state: { email: result.email || data.email } });
+      navigate('/verify-email', {
+        state: { email: result?.email || data.email },
+      });
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed. Please check your inputs.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 py-12 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="max-w-2xl w-full relative z-10 animate-fade-in">
-        <div className="glass-dark rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 transform hover:scale-110 hover:rotate-6 transition-all duration-300">
-                <UserPlus className="w-10 h-10 text-white" />
-              </div>
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-12 relative">
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="max-w-2xl w-full"
+      >
+        <Card className="p-8 sm:p-10 shadow-2xl border-slate-200/80 dark:border-white/10">
+          {/* Header */}
+          <div className="text-center mb-8 space-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/25 text-white mb-4">
+              <Sparkles className="w-7 h-7 animate-pulse" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-3">Join NutriGenie</h2>
-            <p className="text-slate-400 text-lg">Start your personalized fitness journey today 🚀</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Create Your Profile
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Personalize NutriGenie with your body metrics and dietary lifestyle
+            </p>
           </div>
 
+          {/* Error message with shake animation */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/20 backdrop-blur-sm border border-red-500/50 rounded-xl flex items-start space-x-3 animate-slide-up">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-300 font-semibold">{error}</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1, x: [-8, 8, -6, 6, -3, 3, 0] }}
+              transition={{ duration: 0.4 }}
+              className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-rose-700 dark:text-rose-300 leading-snug">
+                {error}
+              </p>
+            </motion.div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Basic Info */}
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="John Doe"
-                />
+            {/* Account Info Section */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-200/80 dark:border-white/10">
+                1. Account Credentials
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. Priya Sharma"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      placeholder="priya@example.com"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Password
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength="6"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="Min 6 characters"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Age
-                </label>
-                <input
-                  type="number"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleChange}
-                  required
-                  min="10"
-                  max="100"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="25"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Gender
-                </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Weight (kg)
-                </label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  required
-                  min="20"
-                  step="0.1"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="70"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Height (cm)
-                </label>
-                <input
-                  type="number"
-                  name="height"
-                  value={formData.height}
-                  onChange={handleChange}
-                  required
-                  min="100"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                  placeholder="170"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Fitness Goal
-                </label>
-                <select
-                  name="goal"
-                  value={formData.goal}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                >
-                  <option value="weight_loss">Weight Loss</option>
-                  <option value="weight_gain">Weight Gain</option>
-                  <option value="muscle_gain">Muscle Gain</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Activity Level
-                </label>
-                <select
-                  name="activityLevel"
-                  value={formData.activityLevel}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                >
-                  <option value="sedentary">Sedentary (Little/no exercise)</option>
-                  <option value="light">Light (Exercise 1-3 days/week)</option>
-                  <option value="moderate">Moderate (Exercise 4-5 days/week)</option>
-                  <option value="active">Active (Daily exercise)</option>
-                  <option value="very_active">Very Active (Intense daily)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
-                  Dietary Preference
-                </label>
-                <select
-                  name="dietaryPreference"
-                  value={formData.dietaryPreference}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-semibold transition-all"
-                >
-                  <option value="vegetarian">Vegetarian</option>
-                  <option value="non_vegetarian">Non-Vegetarian</option>
-                  <option value="vegan">Vegan</option>
-                  <option value="diabetic_friendly">Diabetic Friendly</option>
-                </select>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    placeholder="Create a strong password (min 6 characters)"
+                    className="w-full pl-10 pr-11 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <button
+            {/* Bio-Metrics Section */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-200/80 dark:border-white/10">
+                2. Body Metrics
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Age (yrs)
+                  </label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    required
+                    min="10"
+                    max="100"
+                    placeholder="26"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Gender
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    required
+                    min="30"
+                    max="250"
+                    placeholder="70"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    name="height"
+                    value={formData.height}
+                    onChange={handleChange}
+                    required
+                    min="100"
+                    max="250"
+                    placeholder="172"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Lifestyle & Goals Section */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-200/80 dark:border-white/10">
+                3. Lifestyle & Diet
+              </h3>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Primary Goal
+                  </label>
+                  <select
+                    name="goal"
+                    value={formData.goal}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  >
+                    <option value="weight_loss">Weight Loss (Fat Loss)</option>
+                    <option value="muscle_gain">Muscle Gain</option>
+                    <option value="maintenance">Maintenance & Energy</option>
+                    <option value="weight_gain">Weight Gain</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Activity Level
+                  </label>
+                  <select
+                    name="activityLevel"
+                    value={formData.activityLevel}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  >
+                    <option value="sedentary">Sedentary (Desk Job)</option>
+                    <option value="light">Light (1-2 days/wk)</option>
+                    <option value="moderate">Moderate (3-5 days/wk)</option>
+                    <option value="active">Active (6-7 days/wk)</option>
+                    <option value="very_active">Very Active (Athlete)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Dietary Preference
+                  </label>
+                  <select
+                    name="dietaryPreference"
+                    value={formData.dietaryPreference}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+                  >
+                    <option value="vegetarian">Pure Vegetarian</option>
+                    <option value="eggetarian">Eggetarian</option>
+                    <option value="non_vegetarian">Non-Vegetarian</option>
+                    <option value="jain">Jain (No Root Veg)</option>
+                    <option value="vegan">Vegan</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <Button
               type="submit"
-              disabled={loading}
-              className="group w-full py-4 px-6 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg relative overflow-hidden"
+              variant="primary"
+              size="lg"
+              isLoading={loading}
+              rightIcon={ArrowRight}
+              className="w-full justify-center text-sm font-bold shadow-lg shadow-cyan-500/25 mt-4"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="relative z-10">{loading ? 'Creating Account...' : 'Create Account \u2192'}</span>
-            </button>
+              Continue to Email Verification
+            </Button>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-slate-400 text-lg">
+          {/* Footer link */}
+          <div className="mt-8 pt-6 border-t border-slate-200/80 dark:border-white/10 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors duration-300 hover:underline">
-                Login here \u2192
+              <Link
+                to="/login"
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+              >
+                Sign in here →
               </Link>
             </p>
           </div>
-        </div>
-      </div>
+        </Card>
+      </motion.div>
     </div>
   );
 };

@@ -10,6 +10,8 @@ router.get('/cached', protect, getCachedPlan);
 
 // Progress tracking
 router.post('/progress', protect, updateProgress);
+router.post('/toggle-meal', protect, updateProgress);
+router.post('/log-meal', protect, updateProgress);
 router.post('/reset', protect, resetProgress);
 router.get('/progress-stats', protect, getProgressStats);
 
