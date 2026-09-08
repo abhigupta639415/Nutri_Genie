@@ -17,9 +17,9 @@ async function testFoodUpload() {
     const form = new FormData();
     form.append('image', fs.createReadStream(testImagePath));
     
-    console.log('📤 Uploading test image to http://localhost:3001/api/food/analyze...\n');
+    console.log('📤 Uploading test image to ${process.env.REACT_APP_API_URL}/api/food/analyze...\n');
     
-    const response = await axios.post('http://localhost:3001/api/food/analyze', form, {
+    const response = await axios.post('${process.env.REACT_APP_API_URL}/api/food/analyze', form, {
       headers: {
         ...form.getHeaders()
       },

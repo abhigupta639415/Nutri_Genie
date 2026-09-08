@@ -124,7 +124,7 @@ const DietPlan = () => {
         if (!forceRegen) {
           try {
             const cachedRes = await axios.get(
-              `http://localhost:3001/api/diet/cached?weeks=${weeks}&days=${days}&unit=${unit}`
+              `${process.env.REACT_APP_API_URL}/api/diet/cached?weeks=${weeks}&days=${days}&unit=${unit}`
             );
             if (
               cachedRes.data.hasCachedPlan &&

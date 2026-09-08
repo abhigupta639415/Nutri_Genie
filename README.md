@@ -99,7 +99,7 @@ npm run dev
 npm start
 ```
 
-Backend will run at `http://localhost:3001`
+Backend will run at `${process.env.REACT_APP_API_URL}`
 
 ### Frontend Setup
 
@@ -118,7 +118,7 @@ npm install
 npm start
 ```
 
-Frontend will open at `http://localhost:3001`
+Frontend will open at `${process.env.REACT_APP_API_URL}`
 
 ## 📚 API Endpoints
 

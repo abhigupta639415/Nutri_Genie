@@ -45,7 +45,7 @@ cp .env.example .env
 npm run dev
 ```
 
-**Backend should now be running at http://localhost:3001** ✅
+**Backend should now be running at ${process.env.REACT_APP_API_URL}** ✅
 
 ### Step 2: Frontend Setup
 
@@ -62,11 +62,11 @@ npm install
 npm start
 ```
 
-**Frontend should open automatically at http://localhost:3001** ✅
+**Frontend should open automatically at ${process.env.REACT_APP_API_URL}** ✅
 
 ## 🎉 You're Ready!
 
-1. **Visit** http://localhost:3001
+1. **Visit** ${process.env.REACT_APP_API_URL}
 2. **Click** "Get Started" or "Register"
 3. **Fill in** your details:
    - Name, email, password
@@ -121,15 +121,15 @@ Create a test user with:
 
 ## 🌐 Access URLs
 
-- **Frontend**: http://localhost:3001
-- **Backend API**: http://localhost:3001
-- **API Documentation**: http://localhost:3001 (shows available endpoints)
+- **Frontend**: ${process.env.REACT_APP_API_URL}
+- **Backend API**: ${process.env.REACT_APP_API_URL}
+- **API Documentation**: ${process.env.REACT_APP_API_URL} (shows available endpoints)
 
 ## 📊 Sample API Test
 
 Test backend is working:
 ```bash
-curl http://localhost:3001
+curl ${process.env.REACT_APP_API_URL}
 ```
 
 Should return API information.
@@ -153,7 +153,7 @@ Should return API information.
 
 ## 💡 Pro Tips
 
-- **Bookmark** http://localhost:3001 for easy access
+- **Bookmark** ${process.env.REACT_APP_API_URL} for easy access
 - **Keep backend running** in one terminal
 - **Frontend in another** terminal
 - **MongoDB must be running** at all times

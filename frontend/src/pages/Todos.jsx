@@ -96,7 +96,7 @@ const Todos = () => {
 
   const handleToggleTodo = async (id) => {
     try {
-      await axios.patch(`http://localhost:3001/api/todos/${id}/toggle`);
+      await axios.patch(`${process.env.REACT_APP_API_URL}/api/todos/${id}/toggle`);
       fetchTodos();
       fetchStats();
     } catch (error) {
@@ -107,7 +107,7 @@ const Todos = () => {
   const handleDeleteTodo = async (id) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
-        await axios.delete(`http://localhost:3001/api/todos/${id}`);
+        await axios.delete(`${process.env.REACT_APP_API_URL}/api/todos/${id}`);
         fetchTodos();
         fetchStats();
       } catch (error) {
@@ -119,7 +119,7 @@ const Todos = () => {
   const handleEditTodo = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:3001/api/todos/${editingTodo._id}`, editingTodo);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/todos/${editingTodo._id}`, editingTodo);
       setEditingTodo(null);
       fetchTodos();
       fetchStats();

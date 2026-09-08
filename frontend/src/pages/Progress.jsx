@@ -87,8 +87,8 @@ const Progress = () => {
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [progRes, dietRes] = await Promise.all([
-        axios.get(`http://localhost:3001/api/progress/summary?period=${period}`, { headers: authHeaders }),
-        axios.get(`http://localhost:3001/api/diet/progress-stats`, { headers: authHeaders }).catch((err) => {
+        axios.get(`${process.env.REACT_APP_API_URL}/api/progress/summary?period=${period}`, { headers: authHeaders }),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/diet/progress-stats`, { headers: authHeaders }).catch((err) => {
           console.warn('Diet progress stats fetch warning:', err.message);
           return null;
         }),

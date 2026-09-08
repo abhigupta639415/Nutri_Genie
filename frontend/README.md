@@ -16,7 +16,7 @@ Modern, responsive React frontend for the AI-powered fitness and diet platform.
 
 - Node.js (v14 or higher)
 - npm or yarn
-- Backend API running on `http://localhost:3001`
+- Backend API running on `${process.env.REACT_APP_API_URL}`
 
 ## 🛠️ Installation
 
@@ -30,7 +30,7 @@ npm install
 npm start
 ```
 
-The app will open at `http://localhost:3001`
+The app will open at `${process.env.REACT_APP_API_URL}`
 
 ## 📱 Pages
 
@@ -76,7 +76,7 @@ The optimized files will be in the `build/` directory.
 
 The API base URL is configured in each component as:
 ```javascript
-http://localhost:3001
+${process.env.REACT_APP_API_URL}
 ```
 
 For production, update this to your deployed backend URL or use environment variables.
