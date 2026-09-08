@@ -332,13 +332,24 @@ const DietPlan = () => {
     });
 
     try {
-      const res = await axios.post('http://localhost:3001/api/diet/toggle-meal', {
-        key,
-        mealId: mealType,
-        dayId: day,
-        completed: !wasCompleted,
-        clientDate: new Date().toISOString(),
-      });
+      const token = localStorage.getItem('token');
+      const meal = getMealForDay(day, mealType);
+      const res = await axios.post(
+        'http://localhost:3001/api/diet/toggle-meal',
+        {
+          key,
+          mealId: mealType,
+          mealType,
+          mealName: meal?.name || '',
+          calories: meal?.calories || 0,
+          dayId: day,
+          completed: !wasCompleted,
+          clientDate: new Date().toISOString(),
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
 
       const serverList = Array.isArray(res.data.completedMealsList)
         ? res.data.completedMealsList

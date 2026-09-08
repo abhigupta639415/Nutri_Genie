@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const Progress = require('../models/Progress');
 const { calculateBMR, calculateTDEE, calculateBMI, calculateTargetCalories, calculateMacros } = require('../utils/calculations');
 const GeminiDietPlan = require('../models/GeminiDietPlan');
 const { generateWeeklyMealPlan, getAlternativeMeals: getDietGeneratorAlternatives } = require('../utils/dietGenerator');
@@ -275,6 +276,59 @@ const calculateProgressStats = (plan, completedSet) => {
   return { totalMeals, completedMealsCount, overallProgress, completedDays: completedDaysCount, totalDays };
 };
 
+/**
+ * Calculate real adherence numbers from daily Progress records for this user within the active plan duration.
+ */
+const calculateAdherenceFromProgress = async (user, plan = null) => {
+  const planDurationDays = plan?.planDurationDays || (plan?.planDurationWeeks ? plan.planDurationWeeks * 7 : (user?.planDurationDays || (user?.planDurationWeeks ? user.planDurationWeeks * 7 : 28)));
+  const totalMeals = planDurationDays * 4;
+
+  const planStartDate = plan?.startDate || user?.planStartDate || new Date();
+  const startOfPlanDate = new Date(planStartDate);
+  startOfPlanDate.setHours(0, 0, 0, 0);
+
+  const endOfPlanDate = new Date(startOfPlanDate);
+  endOfPlanDate.setDate(endOfPlanDate.getDate() + planDurationDays);
+  endOfPlanDate.setHours(23, 59, 59, 999);
+
+  const progressRecords = await Progress.find({
+    userId: user._id,
+    date: { $gte: startOfPlanDate, $lte: endOfPlanDate }
+  });
+
+  let completedMealsCount = 0;
+  let completedDays = 0;
+  const standardSlots = ['breakfast', 'lunch', 'dinner', 'snacks'];
+
+  for (const doc of progressRecords) {
+    if (Array.isArray(doc.mealsLogged) && doc.mealsLogged.length > 0) {
+      const loggedSlots = new Set();
+      for (const m of doc.mealsLogged) {
+        if (m && m.mealType) {
+          loggedSlots.add(m.mealType.toLowerCase().trim());
+        }
+      }
+      completedMealsCount += loggedSlots.size;
+      const allFour = standardSlots.every(s => loggedSlots.has(s)) || loggedSlots.size >= 4;
+      if (allFour) {
+        completedDays++;
+      }
+    }
+  }
+
+  const overallProgress = totalMeals > 0 ? Math.round((completedMealsCount / totalMeals) * 100) : 0;
+
+  return {
+    totalMeals,
+    completedMealsCount,
+    completedDays,
+    totalDays: planDurationDays,
+    overallProgress,
+    planDurationDays,
+    planDurationWeeks: Math.ceil(planDurationDays / 7)
+  };
+};
+
 // @desc    Toggle progress for a meal and return updated progress stats
 // @route   POST /api/diet/progress
 // @access  Private
@@ -423,15 +477,88 @@ const updateProgress = async (req, res) => {
 
     const completedMealsArray = Array.from(completed);
 
-    // Persist using findByIdAndUpdate with $set
+    // Persist to GeminiDietPlan completedMeals array
     await GeminiDietPlan.findByIdAndUpdate(
       currentPlan._id,
       { $set: { completedMeals: completedMealsArray } },
       { new: true }
     );
 
-    // Calculate full progress stats
-    const stats = calculateProgressStats(currentPlan, completed);
+    // Resolve meal slot, dish name, and calories
+    const mealType = (req.body.mealType || req.body.mealId || canonicalKey.split('-')[1] || 'meal').toLowerCase();
+    let mealName = req.body.mealName;
+    let calories = req.body.calories ? Number(req.body.calories) : 0;
+
+    if (!mealName && currentPlan?.plan?.weeks) {
+      const weekIndex = Math.floor((dayNum - 1) / 7);
+      const dayIndex = (dayNum - 1) % 7;
+      const weeksArr = currentPlan.plan.weeks || [];
+      const weekObj = weeksArr[weekIndex] || weeksArr[weekIndex % (weeksArr.length || 1)];
+      const dayObj = weekObj?.days?.[dayIndex];
+      const m = dayObj?.meals?.[mealType];
+      if (m) {
+        mealName = m.name;
+        if (!calories && m.calories) calories = Number(m.calories);
+      }
+    }
+
+    // Persist meal completion into today's daily Progress document
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    let progress = await Progress.findOne({
+      userId: user._id,
+      date: { $gte: startOfToday, $lte: endOfToday }
+    });
+
+    if (!progress) {
+      progress = new Progress({
+        userId: user._id,
+        date: now,
+        weight: user.weight || 70,
+        caloriesConsumed: 0,
+        caloriesBurned: 0,
+        waterIntake: 0,
+        sleepHours: 0,
+        mood: 'okay',
+        workoutsCompleted: [],
+        mealsLogged: []
+      });
+    }
+
+    if (!Array.isArray(progress.mealsLogged)) {
+      progress.mealsLogged = [];
+    }
+
+    const itemsArray = mealName ? [mealName] : [mealType];
+
+    if (isNowCompleted) {
+      const existingIdx = progress.mealsLogged.findIndex(
+        m => m.mealType && m.mealType.toLowerCase() === mealType
+      );
+      if (existingIdx >= 0) {
+        progress.mealsLogged[existingIdx].items = itemsArray;
+        if (calories) progress.mealsLogged[existingIdx].calories = calories;
+      } else {
+        progress.mealsLogged.push({
+          mealType,
+          items: itemsArray,
+          calories: calories || 0
+        });
+      }
+    } else {
+      progress.mealsLogged = progress.mealsLogged.filter(
+        m => !m.mealType || m.mealType.toLowerCase() !== mealType
+      );
+    }
+
+    await progress.save();
+
+    // Calculate full progress stats from daily Progress documents
+    const adherenceStats = await calculateAdherenceFromProgress(user, currentPlan);
 
     const dayMealTypes = getMealTypesForDay(currentPlan, dayNum);
     const dayTotal = dayMealTypes.length;
@@ -441,13 +568,14 @@ const updateProgress = async (req, res) => {
     return res.json({
       success: true,
       mealCompleted: isNowCompleted,
-      completedMeals: completedMealsArray.length,
+      completedMeals: adherenceStats.completedMealsCount,
       completedMealsList: completedMealsArray,
-      totalMeals: stats.totalMeals,
-      completedDays: stats.completedDays,
-      totalDays: stats.totalDays,
+      completedMealsCount: adherenceStats.completedMealsCount,
+      totalMeals: adherenceStats.totalMeals,
+      completedDays: adherenceStats.completedDays,
+      totalDays: adherenceStats.totalDays,
       dayProgress,
-      overallProgress: stats.overallProgress,
+      overallProgress: adherenceStats.overallProgress,
       planId: currentPlan._id.toString(),
       id: currentPlan._id.toString(),
     });
@@ -486,7 +614,15 @@ const resetProgress = async (req, res) => {
 
     await User.findByIdAndUpdate(user._id, { planStartDate: newStartDate });
 
-    const stats = calculateProgressStats(plan, new Set());
+    // Clear mealsLogged on today's Progress doc as well so adherence resets cleanly
+    const startOfToday = new Date(newStartDate);
+    startOfToday.setHours(0, 0, 0, 0);
+    await Progress.updateMany(
+      { userId: user._id, date: { $gte: startOfToday } },
+      { $set: { mealsLogged: [] } }
+    );
+
+    const stats = await calculateAdherenceFromProgress(user, plan);
 
     res.json({
       success: true,
@@ -495,7 +631,11 @@ const resetProgress = async (req, res) => {
       completedMealsList: [],
       startDate: newStartDate,
       planStartDate: newStartDate,
-      ...stats,
+      totalMeals: stats.totalMeals,
+      completedMealsCount: 0,
+      completedDays: 0,
+      totalDays: stats.totalDays,
+      overallProgress: 0,
       planId: plan._id.toString(),
       id: plan._id.toString(),
     });
@@ -516,32 +656,22 @@ const getProgressStats = async (req, res) => {
   try {
     const user = req.user;
     const { plan } = await findUserDietPlan(user);
-
-    if (!plan) {
-      return res.json({
-        hasPlan: false,
-        completedMeals: 0,
-        completedMealsList: [],
-        completedMealsCount: 0,
-        totalMeals: 0,
-        overallProgress: 0,
-        completedDays: 0,
-        totalDays: 0,
-      });
-    }
-
-    const completed = new Set(plan.completedMeals || []);
-    const stats = calculateProgressStats(plan, completed);
+    const stats = await calculateAdherenceFromProgress(user, plan);
 
     return res.json({
-      hasPlan: true,
-      planId: plan._id.toString(),
-      id: plan._id.toString(),
-      _id: plan._id.toString(),
-      completedMeals: plan.completedMeals?.length || 0,
-      completedMealsList: plan.completedMeals || [],
-      completedMealsCount: plan.completedMeals?.length || 0,
-      ...stats,
+      hasPlan: !!plan,
+      planId: plan ? plan._id.toString() : null,
+      id: plan ? plan._id.toString() : null,
+      _id: plan ? plan._id.toString() : null,
+      completedMeals: stats.completedMealsCount,
+      completedMealsList: plan?.completedMeals || [],
+      completedMealsCount: stats.completedMealsCount,
+      totalMeals: stats.totalMeals,
+      completedDays: stats.completedDays,
+      totalDays: stats.totalDays,
+      overallProgress: stats.overallProgress,
+      planDurationDays: stats.planDurationDays,
+      planDurationWeeks: stats.planDurationWeeks,
     });
   } catch (error) {
     console.error('[Diet] getProgressStats error:', error.message);

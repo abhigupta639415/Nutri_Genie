@@ -55,6 +55,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/diet-plan" element={<Navigate to="/diet" replace />} />
 
                 <Route
                   path="/workout"

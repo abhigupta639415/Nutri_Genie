@@ -1,5 +1,6 @@
 const Progress = require('../models/Progress');
 const User = require('../models/User');
+const GeminiDietPlan = require('../models/GeminiDietPlan');
 
 // @desc    Log daily progress (upserts if today's entry already exists)
 // @route   POST /api/progress
@@ -121,6 +122,53 @@ const getProgressSummary = async (req, res) => {
       date: { $gte: startOfDay, $lte: endOfDay }
     });
 
+    // Calculate real diet adherence within active diet plan duration
+    const plan = await GeminiDietPlan.findOne({
+      $or: [
+        { userId: req.user._id },
+        { userId: req.user._id.toString() }
+      ]
+    });
+    const effectiveDays = plan?.planDurationDays || (plan?.planDurationWeeks ? plan.planDurationWeeks * 7 : (req.user.planDurationDays || (req.user.planDurationWeeks ? req.user.planDurationWeeks * 7 : 28)));
+    const totalPossibleMeals = effectiveDays * 4;
+
+    const planStartDate = plan?.startDate || req.user.planStartDate || new Date();
+    const startOfPlan = new Date(planStartDate);
+    startOfPlan.setHours(0, 0, 0, 0);
+    const endOfPlan = new Date(startOfPlan);
+    endOfPlan.setDate(endOfPlan.getDate() + effectiveDays);
+    endOfPlan.setHours(23, 59, 59, 999);
+
+    const planProgressRecords = await Progress.find({
+      userId: req.user._id,
+      date: { $gte: startOfPlan, $lte: endOfPlan }
+    });
+
+    let completedMealsCount = 0;
+    let completedDays = 0;
+    const standardSlots = ['breakfast', 'lunch', 'dinner', 'snacks'];
+
+    for (const doc of planProgressRecords) {
+      if (Array.isArray(doc.mealsLogged) && doc.mealsLogged.length > 0) {
+        const logged = new Set();
+        for (const m of doc.mealsLogged) {
+          if (m?.mealType) logged.add(m.mealType.toLowerCase().trim());
+        }
+        completedMealsCount += logged.size;
+        if (standardSlots.every(s => logged.has(s)) || logged.size >= 4) {
+          completedDays++;
+        }
+      }
+    }
+
+    const dietAdherence = {
+      completedMealsCount,
+      totalMeals: totalPossibleMeals,
+      completedDays,
+      totalDays: effectiveDays,
+      overallProgress: totalPossibleMeals > 0 ? Math.round((completedMealsCount / totalPossibleMeals) * 100) : 0
+    };
+
     if (progressData.length === 0) {
       return res.json({
         message: 'No progress data available',
@@ -136,7 +184,8 @@ const getProgressSummary = async (req, res) => {
           averageWaterIntake: 0,
           averageSleepHours: 0,
           totalWorkouts: 0,
-          streak: 0
+          streak: 0,
+          dietAdherence
         },
         chartData: []
       });
@@ -154,7 +203,8 @@ const getProgressSummary = async (req, res) => {
       averageWaterIntake: Math.round(progressData.reduce((sum, p) => sum + (p.waterIntake || 0), 0) / progressData.length),
       averageSleepHours: Math.round((progressData.reduce((sum, p) => sum + (p.sleepHours || 0), 0) / progressData.length) * 10) / 10,
       totalWorkouts: progressData.reduce((sum, p) => sum + (p.workoutsCompleted?.length || 0), 0),
-      streak: calculateStreak(progressData)
+      streak: calculateStreak(progressData),
+      dietAdherence
     };
 
     res.json({

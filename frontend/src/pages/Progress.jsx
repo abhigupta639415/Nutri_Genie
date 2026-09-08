@@ -83,13 +83,21 @@ const Progress = () => {
   const fetchProgress = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [progRes, dietRes] = await Promise.all([
-        axios.get(`http://localhost:3001/api/progress/summary?period=${period}`),
-        axios.get(`http://localhost:3001/api/diet/progress-stats`).catch(() => null),
+        axios.get(`http://localhost:3001/api/progress/summary?period=${period}`, { headers: authHeaders }),
+        axios.get(`http://localhost:3001/api/diet/progress-stats`, { headers: authHeaders }).catch((err) => {
+          console.warn('Diet progress stats fetch warning:', err.message);
+          return null;
+        }),
       ]);
       setProgressData(progRes.data);
       if (dietRes && dietRes.data) {
         setDietStats(dietRes.data);
+      } else if (progRes.data?.summary?.dietAdherence) {
+        setDietStats(progRes.data.summary.dietAdherence);
       }
 
       if (progRes.data?.todayEntry) {
