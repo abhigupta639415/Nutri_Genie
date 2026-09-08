@@ -78,7 +78,7 @@ const FoodAnalyzer = () => {
     formData.append('image', selectedImage);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/food/analyze', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/food/analyze`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

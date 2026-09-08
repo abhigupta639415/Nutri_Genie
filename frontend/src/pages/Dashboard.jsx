@@ -147,8 +147,8 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [dietResponse, progressResponse] = await Promise.all([
-        axios.get('http://localhost:3001/api/diet/plan'),
-        axios.get('http://localhost:3001/api/progress/summary?period=week'),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/diet/plan`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/progress/summary?period=week`),
       ]);
 
       setStats({
@@ -209,7 +209,7 @@ const Dashboard = () => {
       localStorage.setItem(getDurationKey(), String(days));
 
       // Trigger Gemini diet plan generation dynamically
-      const genRes = await axios.post('http://localhost:3001/api/diet/generate', {
+      const genRes = await axios.post(`${process.env.REACT_APP_API_URL}/api/diet/generate`, {
         planDurationWeeks: weeks,
         planDurationDays: days,
         durationUnit,

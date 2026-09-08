@@ -128,7 +128,7 @@ const Workout = () => {
   useEffect(() => {
     const syncWeekStatus = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/workout/week-status');
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/workout/week-status`);
         if (res.data?.completedDays) {
           setCompletedDays((prev) => {
             const merged = { ...prev, ...res.data.completedDays };
@@ -177,7 +177,7 @@ const Workout = () => {
     };
 
     try {
-      await axios.post('http://localhost:3001/api/workout/toggle', {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/workout/toggle`, {
         day: dayNum,
         date: dayInfo.dateString,
         completed: newCompleted,

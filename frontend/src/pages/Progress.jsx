@@ -142,7 +142,7 @@ const Progress = () => {
       const newWeight = parseFloat(formData.weight);
 
       await axios.post(
-        'http://localhost:3001/api/progress',
+        `${process.env.REACT_APP_API_URL}/api/progress`,
         {
           caloriesConsumed: parseInt(formData.caloriesConsumed, 10) || 0,
           caloriesBurned: parseInt(formData.caloriesBurned, 10) || 0,

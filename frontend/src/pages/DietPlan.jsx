@@ -147,7 +147,7 @@ const DietPlan = () => {
 
         setGenerating(true);
         try {
-          const genRes = await axios.post('http://localhost:3001/api/diet/generate', {
+          const genRes = await axios.post(`${process.env.REACT_APP_API_URL}/api/diet/generate`, {
             planDurationWeeks: weeks,
             planDurationDays: days,
             durationUnit: unit,
@@ -172,7 +172,7 @@ const DietPlan = () => {
         }
 
         try {
-          const fallbackRes = await axios.get('http://localhost:3001/api/diet/cached');
+          const fallbackRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/diet/cached`);
           if (fallbackRes.data.hasCachedPlan && fallbackRes.data.plan) {
             setDietData(fallbackRes.data);
             const activeWeeks = fallbackRes.data.planDurationWeeks || 4;
@@ -335,7 +335,7 @@ const DietPlan = () => {
       const token = localStorage.getItem('token');
       const meal = getMealForDay(day, mealType);
       const res = await axios.post(
-        'http://localhost:3001/api/diet/toggle-meal',
+        `${process.env.REACT_APP_API_URL}/api/diet/toggle-meal`,
         {
           key,
           mealId: mealType,
@@ -411,7 +411,7 @@ const DietPlan = () => {
       localStorage.removeItem(getMealsStorageKey());
     } catch (e) {}
     try {
-      const res = await axios.post('http://localhost:3001/api/diet/reset');
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/diet/reset`);
       if (res.data?.startDate) {
         setDietData((prev) =>
           prev ? { ...prev, startDate: res.data.startDate, planStartDate: res.data.startDate, completedMeals: [] } : prev

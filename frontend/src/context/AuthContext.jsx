@@ -28,7 +28,7 @@
 
 //   const fetchUserProfile = async () => {
 //     try {
-//       const response = await axios.get('http://localhost:3001/api/auth/profile');
+//       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/profile`);
 //       setUser(response.data);
 //     } catch (error) {
 //       console.error('Error fetching profile:', error);
@@ -39,7 +39,7 @@
 //   };
 
 //   const register = async (userData) => {
-//     const response = await axios.post('http://localhost:3001/api/auth/register', userData);
+//     const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/register`, userData);
 //     const { token: newToken, ...userInfo } = response.data;
 //     setToken(newToken);
 //     setUser(userInfo);
@@ -48,7 +48,7 @@
 //   };
 
 //   const login = async (credentials) => {
-//     const response = await axios.post('http://localhost:3001/api/auth/login', credentials);
+//     const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, credentials);
 //     const { token: newToken, ...userInfo } = response.data;
 //     setToken(newToken);
 //     setUser(userInfo);
@@ -64,7 +64,7 @@
 //   };
 
 //   const updateProfile = async (updates) => {
-//     const response = await axios.put('http://localhost:3001/api/auth/profile', updates);
+//     const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/auth/profile`, updates);
 //     setUser(response.data);
 //   };
 
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/auth/profile');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/profile`);
       setUser(response.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -126,12 +126,12 @@ export const AuthProvider = ({ children }) => {
   // issue a token until the email is verified. Returns { message, email }
   // so the caller can route to the verify-email screen.
   const register = async (userData) => {
-    const response = await axios.post('http://localhost:3001/api/auth/register', userData);
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/register`, userData);
     return response.data;
   };
 
   const login = async (credentials) => {
-    const response = await axios.post('http://localhost:3001/api/auth/login', credentials);
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, credentials);
     const { token: newToken, ...userInfo } = response.data;
     setToken(newToken);
     setUser(userInfo);
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }) => {
   // Confirms the 6-digit code. On success the backend returns a token,
   // same as login — so this logs the user in.
   const verifyEmail = async (email, verificationCode) => {
-    const response = await axios.post('http://localhost:3001/api/auth/verify-email', {
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/verify-email`, {
       email,
       verificationCode
     });
@@ -155,7 +155,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resendVerificationCode = async (email) => {
-    const response = await axios.post('http://localhost:3001/api/auth/resend-verification', { email });
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/resend-verification`, { email });
     return response.data;
   };
 
@@ -167,7 +167,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfile = async (updates) => {
-    const response = await axios.put('http://localhost:3001/api/auth/profile', updates);
+    const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/auth/profile`, updates);
     setUser(response.data);
   };
 

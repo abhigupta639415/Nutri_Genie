@@ -55,7 +55,7 @@ const Todos = () => {
 
   const fetchTodos = async () => {
     try {
-      let url = 'http://localhost:3001/api/todos?';
+      let url = `${process.env.REACT_APP_API_URL}/api/todos?`;
       if (filterCompleted !== 'all') {
         url += `completed=${filterCompleted === 'completed'}&`;
       }
@@ -74,7 +74,7 @@ const Todos = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/todos/stats');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/todos/stats`);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -84,7 +84,7 @@ const Todos = () => {
   const handleAddTodo = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3001/api/todos', newTodo);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/todos`, newTodo);
       setShowAddModal(false);
       resetForm();
       fetchTodos();
