@@ -4,7 +4,9 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // STARTTLS on port 587
   auth: {
     type: 'OAuth2',
     user: process.env.EMAIL_USER,
@@ -12,15 +14,9 @@ const transporter = nodemailer.createTransport({
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
   },
+  connectionTimeout: 10000, // fail fast instead of hanging
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('Error connecting to email server:', error);
-  } else {
-    console.log('Email server is ready to send messages');
-  }
-});
 // Verify the connection configuration
 transporter.verify((error, success) => {
   if (error) {
