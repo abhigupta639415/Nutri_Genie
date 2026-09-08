@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import {
   Dumbbell,
@@ -13,6 +14,7 @@ import {
   Target,
   Zap,
   Check,
+  Lock,
 } from 'lucide-react';
 import { fatLossWorkouts } from '../data/fatLossWorkouts';
 import { muscleGainWorkouts } from '../data/muscleGainWorkouts';
@@ -61,35 +63,154 @@ const Workout = () => {
     rest: Calendar,
   };
 
+  const [togglingDay, setTogglingDay] = useState(null);
+
+  const getDayInfo = useCallback((dayNum) => {
+    // Current week: Monday is Day 1, Sunday is Day 7
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon, ..., 6 is Sat
+    const todayIso = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+    const diffDays = dayNum - todayIso;
+    const date = new Date(today);
+    date.setDate(today.getDate() + diffDays);
+
+    let status = 'past';
+    if (diffDays === 0) status = 'today';
+    else if (diffDays > 0) status = 'future';
+
+    const formattedDate = date.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+
+    return {
+      status,
+      isLocked: status === 'future',
+      isToday: status === 'today',
+      isPast: status === 'past',
+      date,
+      dateString: date.toISOString(),
+      formattedDate,
+    };
+  }, []);
+
+  const getWeekStorageKey = useCallback(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayOfWeek = today.getDay();
+    const todayIso = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (todayIso - 1));
+    const mondayStr = monday.toISOString().split('T')[0];
+    return `workout_${selectedGoal}_${selectedLevel}_week_${mondayStr}_${planKey}`;
+  }, [selectedGoal, selectedLevel, planKey]);
+
+  const loadCompletedDays = useCallback(() => {
+    const storageKey = getWeekStorageKey();
+    const saved = localStorage.getItem(storageKey);
+    setCompletedDays(saved ? JSON.parse(saved) : {});
+  }, [getWeekStorageKey]);
+
   useEffect(() => {
     loadWorkoutPlan();
     loadCompletedDays();
-  }, [selectedGoal, selectedLevel, planKey]);
+  }, [selectedGoal, selectedLevel, planKey, loadCompletedDays]);
 
   const loadWorkoutPlan = () => {
     const plan = allWorkouts[selectedGoal]?.[selectedLevel] || [];
     setWorkoutPlan(plan);
   };
 
-  const loadCompletedDays = () => {
-    const storageKey = `workout_${selectedGoal}_${selectedLevel}_${planKey}`;
-    const saved = localStorage.getItem(storageKey);
-    setCompletedDays(saved ? JSON.parse(saved) : {});
-  };
+  // Sync with server week status
+  useEffect(() => {
+    const syncWeekStatus = async () => {
+      try {
+        const res = await axios.get('http://localhost:3001/api/workout/week-status');
+        if (res.data?.completedDays) {
+          setCompletedDays((prev) => {
+            const merged = { ...prev, ...res.data.completedDays };
+            const storageKey = getWeekStorageKey();
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn('Could not sync workout status with server:', err.message);
+      }
+    };
+    syncWeekStatus();
+  }, [selectedGoal, selectedLevel, planKey, getWeekStorageKey]);
 
-  const toggleDayCompletion = (dayNum) => {
-    const storageKey = `workout_${selectedGoal}_${selectedLevel}_${planKey}`;
+  const toggleDayCompletion = async (dayNum) => {
+    const dayInfo = getDayInfo(dayNum);
+    // Gate: future days are locked and strictly non-interactive
+    if (dayInfo.isLocked) {
+      return;
+    }
+
+    if (togglingDay === dayNum) return;
+    setTogglingDay(dayNum);
+
+    const wasCompleted = !!completedDays[dayNum];
+    const newCompleted = !wasCompleted;
+
+    // Optimistic UI update
     const updated = {
       ...completedDays,
-      [dayNum]: !completedDays[dayNum],
+      [dayNum]: newCompleted,
     };
     setCompletedDays(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    const storageKey = getWeekStorageKey();
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch (e) {}
+
+    const workout = workoutPlan.find((w) => w.day === dayNum) || {
+      name: `Day ${dayNum} Workout`,
+      duration: '40 min',
+      caloriesBurned: 280,
+    };
+
+    try {
+      await axios.post('http://localhost:3001/api/workout/toggle', {
+        day: dayNum,
+        date: dayInfo.dateString,
+        completed: newCompleted,
+        workout: {
+          name: workout.name,
+          type: workout.type,
+          duration: workout.duration || '40 min',
+          caloriesBurned: workout.caloriesBurned || 280,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to sync workout toggle with backend:', err);
+      // Rollback on server error
+      const rollback = {
+        ...completedDays,
+        [dayNum]: wasCompleted,
+      };
+      setCompletedDays(rollback);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(rollback));
+      } catch (e) {}
+    } finally {
+      setTogglingDay(null);
+    }
   };
 
   const regeneratePlan = () => {
     setPlanKey((prev) => prev + 1);
     setCompletedDays({});
+    try {
+      const storageKey = getWeekStorageKey();
+      localStorage.removeItem(storageKey);
+    } catch (e) {}
   };
 
   const getCompletedCount = () => {
@@ -230,19 +351,40 @@ const Workout = () => {
         <div className="grid grid-cols-7 gap-2 pt-2">
           {[1, 2, 3, 4, 5, 6, 7].map((day) => {
             const isDone = completedDays[day];
+            const dayInfo = getDayInfo(day);
             return (
               <button
                 key={day}
                 type="button"
-                onClick={() => toggleDayCompletion(day)}
+                disabled={dayInfo.isLocked}
+                onClick={() => !dayInfo.isLocked && toggleDayCompletion(day)}
+                title={
+                  dayInfo.isLocked
+                    ? `Locked (Unlocks on ${dayInfo.formattedDate})`
+                    : dayInfo.isToday
+                    ? `Today (${dayInfo.formattedDate}) - Click to toggle`
+                    : `${dayInfo.formattedDate} - Click to toggle`
+                }
                 className={`py-2 rounded-xl text-center text-xs font-bold transition-all border ${
-                  isDone
+                  dayInfo.isLocked
+                    ? 'bg-slate-100/40 dark:bg-slate-800/30 border-dashed border-slate-200 dark:border-white/5 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60'
+                    : isDone
                     ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30'
+                    : dayInfo.isToday
+                    ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/50 hover:bg-cyan-500/25'
                     : 'bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-cyan-500/40'
                 }`}
               >
                 <span>D{day}</span>
-                {isDone && <Check className="w-3.5 h-3.5 mx-auto mt-0.5" />}
+                {isDone ? (
+                  <Check className="w-3.5 h-3.5 mx-auto mt-0.5" />
+                ) : dayInfo.isLocked ? (
+                  <Lock className="w-3 h-3 mx-auto mt-0.5 text-slate-400 dark:text-slate-500" />
+                ) : dayInfo.isToday ? (
+                  <span className="block text-[9px] font-black uppercase text-cyan-600 dark:text-cyan-400 mt-0.5">
+                    Today
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -254,6 +396,7 @@ const Workout = () => {
         {workoutPlan.map((day, idx) => {
           const TypeIcon = typeIcons[day.type] || Dumbbell;
           const isCompleted = completedDays[day.day];
+          const dayInfo = getDayInfo(day.day);
 
           return (
             <motion.div
@@ -264,8 +407,12 @@ const Workout = () => {
             >
               <Card
                 className={`h-full flex flex-col justify-between overflow-hidden border transition-all ${
-                  isCompleted
+                  dayInfo.isLocked
+                    ? 'opacity-65 bg-slate-50/50 dark:bg-slate-900/30 border-dashed border-slate-300 dark:border-white/10 select-none'
+                    : isCompleted
                     ? 'border-emerald-500/40 ring-1 ring-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/15'
+                    : dayInfo.isToday
+                    ? 'border-cyan-500/50 ring-1 ring-cyan-500/30 hover:border-cyan-500 shadow-md shadow-cyan-500/5'
                     : 'hover:border-cyan-500/40'
                 }`}
               >
@@ -273,17 +420,26 @@ const Workout = () => {
                   {/* Day Header Banner */}
                   <div className="p-6 pb-5 border-b border-slate-200/80 dark:border-white/10 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
-                        <TypeIcon className="w-5 h-5" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        dayInfo.isLocked
+                          ? 'bg-slate-200/60 dark:bg-slate-800 text-slate-400'
+                          : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+                      }`}>
+                        {dayInfo.isLocked ? <Lock className="w-5 h-5 text-slate-400" /> : <TypeIcon className="w-5 h-5" />}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-slate-400">
-                            Day {day.day}
+                            Day {day.day} • {dayInfo.formattedDate}
                           </span>
-                          <Badge variant={typeBadges[day.type] || 'brand'} size="sm">
+                          <Badge variant={dayInfo.isLocked ? 'neutral' : (typeBadges[day.type] || 'brand')} size="sm">
                             {day.type?.toUpperCase()}
                           </Badge>
+                          {dayInfo.isToday && (
+                            <Badge variant="brand" size="sm">
+                              TODAY
+                            </Badge>
+                          )}
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mt-0.5">
                           {day.name}
@@ -291,22 +447,31 @@ const Workout = () => {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => toggleDayCompletion(day.day)}
-                      aria-label={`Mark Day ${day.day} complete`}
-                      className={`p-2 rounded-xl transition-colors shrink-0 ${
-                        isCompleted
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-cyan-500'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
+                    {dayInfo.isLocked ? (
+                      <div
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 cursor-not-allowed shrink-0"
+                        title={`Unlocks on ${dayInfo.formattedDate}`}
+                      >
+                        <Lock className="w-5 h-5" />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleDayCompletion(day.day)}
+                        aria-label={isCompleted ? `Mark Day ${day.day} incomplete` : `Mark Day ${day.day} complete`}
+                        className={`p-2 rounded-xl transition-colors shrink-0 ${
+                          isCompleted
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-cyan-500'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : (
+                          <Circle className="w-5 h-5" />
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Day Meta (Duration & Calorie Estimate) */}
@@ -358,15 +523,27 @@ const Workout = () => {
 
                 {/* Footer status */}
                 <div className="p-6 pt-0">
-                  <Button
-                    variant={isCompleted ? 'accent' : 'outline'}
-                    size="sm"
-                    onClick={() => toggleDayCompletion(day.day)}
-                    leftIcon={isCompleted ? Check : Circle}
-                    className="w-full justify-center text-xs font-bold"
-                  >
-                    {isCompleted ? 'Completed ✓' : 'Mark Day Complete'}
-                  </Button>
+                  {dayInfo.isLocked ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={true}
+                      leftIcon={Lock}
+                      className="w-full justify-center text-xs font-bold opacity-60 cursor-not-allowed border-slate-300 dark:border-white/10 text-slate-400"
+                    >
+                      Unlocks on {dayInfo.formattedDate}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={isCompleted ? 'accent' : dayInfo.isToday ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => toggleDayCompletion(day.day)}
+                      leftIcon={isCompleted ? Check : Circle}
+                      className="w-full justify-center text-xs font-bold"
+                    >
+                      {isCompleted ? 'Completed ✓' : dayInfo.isToday ? "Complete Today's Workout" : 'Mark Day Complete'}
+                    </Button>
+                  )}
                 </div>
               </Card>
             </motion.div>

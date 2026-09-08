@@ -122,7 +122,24 @@ const getProgressSummary = async (req, res) => {
     });
 
     if (progressData.length === 0) {
-      return res.json({ message: 'No progress data available', todayEntry: todayEntry || null });
+      return res.json({
+        message: 'No progress data available',
+        todayEntry: todayEntry || null,
+        summary: {
+          period,
+          totalDays: 0,
+          averageCaloriesConsumed: 0,
+          averageCaloriesBurned: 0,
+          weightChange: 0,
+          currentWeight: req.user?.weight || 0,
+          startWeight: req.user?.weight || 0,
+          averageWaterIntake: 0,
+          averageSleepHours: 0,
+          totalWorkouts: 0,
+          streak: 0
+        },
+        chartData: []
+      });
     }
 
     // Calculate summary statistics

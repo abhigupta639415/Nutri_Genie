@@ -45,7 +45,8 @@ const progressSchema = new mongoose.Schema({
   workoutsCompleted: [{
     name: String,
     duration: Number,
-    caloriesBurned: Number
+    caloriesBurned: Number,
+    day: Number
   }],
   mealsLogged: [{
     mealType: String,
