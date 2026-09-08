@@ -20,6 +20,7 @@ import {
 
 import { resolveMealImage, SLOT_DEFAULTS } from '../utils/mealImageResolver';
 import { Button, Card, Badge, Skeleton, AnimatedCounter } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const getMealImage = (mealType, mealName) => {
   return resolveMealImage(mealName, mealType);
@@ -420,7 +421,7 @@ const DietPlan = () => {
 
   if (loading || generating) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-6">
+      <PageContainer className="py-16 text-center space-y-8">
         <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
           <motion.div
             animate={{ rotate: 360 }}
@@ -439,12 +440,12 @@ const DietPlan = () => {
             Gemini AI is balancing macros and authentic recipes for your {planDurationWeeks}-week journey.
           </p>
         </div>
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 pt-6">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-64" />
           ))}
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -476,7 +477,7 @@ const DietPlan = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── HEADER ────────────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
@@ -594,8 +595,8 @@ const DietPlan = () => {
       </div>
 
       {/* ─── PROGRESS GAUGES ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <Card className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Plan Adherence
@@ -613,7 +614,7 @@ const DietPlan = () => {
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Days Completed
@@ -627,7 +628,7 @@ const DietPlan = () => {
           <p className="text-[11px] text-slate-400 mt-1 font-medium">100% meal mark-off</p>
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Daily Target
@@ -640,7 +641,7 @@ const DietPlan = () => {
           <p className="text-[11px] text-slate-400 mt-1 font-medium">Calculated calorie budget</p>
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Meals Logged
@@ -655,7 +656,7 @@ const DietPlan = () => {
       </div>
 
       {/* ─── WEEK SELECTOR BAR ─────────────────────────────────────────── */}
-      <Card className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Card className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -705,7 +706,7 @@ const DietPlan = () => {
       </Card>
 
       {/* ─── DAILY MEALS LIST ──────────────────────────────────────────── */}
-      <div className="space-y-6">
+      <div className="space-y-8 sm:space-y-10">
         {weekDays.map((day) => {
           const dayProgress = getDayProgress(day);
           const isFullyComplete = dayProgress === 100;
@@ -730,7 +731,7 @@ const DietPlan = () => {
               <Card className="overflow-hidden">
                 {/* Day Header Banner */}
                 <div
-                  className={`p-4 sm:p-5 flex items-center justify-between ${
+                  className={`p-5 sm:p-6 flex items-center justify-between ${
                     isFullyComplete
                       ? 'bg-emerald-500/10 border-b border-emerald-500/20'
                       : isFuture
@@ -804,7 +805,7 @@ const DietPlan = () => {
                 </div>
 
                 {/* 4 Meal Slots Grid */}
-                <div className="p-4 sm:p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-6 sm:p-7 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                   {getMealTypesForDay(day).map((mealType) => {
                     const meal = getMealForDay(day, mealType);
                     const isCompleted = isMealCompleted(day, mealType);
@@ -900,7 +901,7 @@ const DietPlan = () => {
                         </div>
 
                         {/* Meal Details */}
-                        <div className="p-3.5 space-y-1.5">
+                        <div className="p-4 sm:p-5 space-y-2">
                           <h4
                             className={`text-xs sm:text-sm font-bold leading-snug line-clamp-2 ${
                               isCompleted
@@ -954,7 +955,7 @@ const DietPlan = () => {
           aria-hidden="true"
         />
       )}
-    </div>
+    </PageContainer>
   );
 };
 

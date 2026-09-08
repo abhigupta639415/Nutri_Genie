@@ -52,35 +52,35 @@ export const Card = React.forwardRef(
 Card.displayName = 'Card';
 
 export const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`p-5 sm:p-6 pb-2 ${className}`} {...props}>
+  <div className={`p-6 sm:p-7 md:p-8 pb-3 ${className}`} {...props}>
     {children}
   </div>
 );
 CardHeader.displayName = 'CardHeader';
 
 export const CardTitle = ({ children, className = '', as: Tag = 'h3', ...props }) => (
-  <Tag className={`text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white ${className}`} {...props}>
+  <Tag className={`text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white ${className}`} {...props}>
     {children}
   </Tag>
 );
 CardTitle.displayName = 'CardTitle';
 
 export const CardDescription = ({ children, className = '', ...props }) => (
-  <p className={`text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed ${className}`} {...props}>
+  <p className={`text-sm md:text-base text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed ${className}`} {...props}>
     {children}
   </p>
 );
 CardDescription.displayName = 'CardDescription';
 
 export const CardContent = ({ children, className = '', ...props }) => (
-  <div className={`p-5 sm:p-6 ${className}`} {...props}>
+  <div className={`p-6 sm:p-7 md:p-8 ${className}`} {...props}>
     {children}
   </div>
 );
 CardContent.displayName = 'CardContent';
 
 export const CardFooter = ({ children, className = '', ...props }) => (
-  <div className={`p-5 sm:p-6 pt-0 flex items-center ${className}`} {...props}>
+  <div className={`p-6 sm:p-7 md:p-8 pt-0 flex items-center ${className}`} {...props}>
     {children}
   </div>
 );

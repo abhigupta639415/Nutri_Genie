@@ -24,6 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, Badge, AnimatedCounter, Skeleton } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const goalMap = {
   weight_loss: 'Weight Loss',
@@ -245,21 +246,21 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
         <div className="space-y-2">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-5 w-96" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
           <Skeleton className="h-56" />
           <Skeleton className="h-56" />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -268,13 +269,13 @@ const Dashboard = () => {
   const bmiCategory = stats?.diet?.metrics?.bmi?.category || 'Healthy';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── GREETING BANNER ───────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 sm:pb-4"
       >
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -311,10 +312,10 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* ─── TOP METRIC CARDS ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ─── TOP METRIC CARDS ──────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* Metric 1: Weight */}
-        <Card hoverEffect className="p-5">
+        <Card hoverEffect className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -385,7 +386,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Metric 2: BMI */}
-        <Card hoverEffect className="p-5">
+        <Card hoverEffect className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Body Mass Index
@@ -405,7 +406,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Metric 3: Target Calories */}
-        <Card hoverEffect className="p-5">
+        <Card hoverEffect className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Target Calories
@@ -421,7 +422,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Metric 4: Goal */}
-        <Card hoverEffect className="p-5">
+        <Card hoverEffect className="p-6 sm:p-7">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Active Goal
@@ -444,7 +445,7 @@ const Dashboard = () => {
         <button
           type="button"
           onClick={() => setShowSettings(!showSettings)}
-          className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          className="w-full p-6 sm:p-8 text-left flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
@@ -479,9 +480,9 @@ const Dashboard = () => {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="border-t border-slate-200/80 dark:border-white/10 p-5 sm:p-6 space-y-6"
+              className="border-t border-slate-200/80 dark:border-white/10 p-6 sm:p-8 space-y-8"
             >
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                 {/* Goal */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
@@ -576,7 +577,7 @@ const Dashboard = () => {
               )}
 
               {/* Food Preferences & Allergies */}
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-6 lg:gap-8">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                     🍛 Food Preferences (Optional)
@@ -631,9 +632,9 @@ const Dashboard = () => {
       </Card>
 
       {/* ─── METABOLIC RATE & MACROS CARDS ─────────────────────────────── */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
         {/* Metabolic Rate */}
-        <Card className="p-6">
+        <Card className="p-6 sm:p-8">
           <CardHeader className="p-0 pb-4">
             <CardTitle className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-amber-500" />
@@ -671,7 +672,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Daily Macros Target */}
-        <Card className="p-6">
+        <Card className="p-6 sm:p-8">
           <CardHeader className="p-0 pb-4">
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5 text-cyan-500" />
@@ -681,7 +682,7 @@ const Dashboard = () => {
               Optimized for {goalMap[user?.goal] || 'your body composition'}
             </p>
           </CardHeader>
-          <div className="grid grid-cols-3 gap-3 pt-2">
+          <div className="grid grid-cols-3 gap-4 pt-3">
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
               <p className="text-xs font-bold text-rose-600 dark:text-rose-400">Protein</p>
               <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
@@ -711,15 +712,15 @@ const Dashboard = () => {
 
       {/* ─── WEEKLY PROGRESS STATS SUMMARY ─────────────────────────────── */}
       {stats?.progress?.summary && (
-        <Card className="p-6">
+        <Card className="p-6 sm:p-8">
           <CardHeader className="p-0 pb-4">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-500" />
               <span>Weekly Progress Summary</span>
             </CardTitle>
           </CardHeader>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 pt-3">
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
               <Calendar className="w-5 h-5 text-cyan-500 mx-auto mb-2" />
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.progress.summary.totalDays || 0} />
@@ -727,7 +728,7 @@ const Dashboard = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Days Tracked</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
               <Flame className="w-5 h-5 text-amber-500 mx-auto mb-2" />
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.progress.summary.averageCaloriesConsumed || 0} />
@@ -735,7 +736,7 @@ const Dashboard = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Avg Calories / Day</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
               <Dumbbell className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.progress.summary.totalWorkouts || 0} />
@@ -743,7 +744,7 @@ const Dashboard = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Workouts</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 text-center">
               <Activity className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 {stats.progress.summary.weightChange > 0 ? '+' : ''}
@@ -756,9 +757,9 @@ const Dashboard = () => {
       )}
 
       {/* ─── QUICK ACTIONS GRID ────────────────────────────────────────── */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         <Link to="/diet">
-          <Card hoverEffect glow="cyan" className="p-5 h-full flex flex-col justify-between">
+          <Card hoverEffect glow="cyan" className="p-6 sm:p-7 h-full flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-md shadow-cyan-500/20">
                 <Utensils className="w-6 h-6" />
@@ -777,7 +778,7 @@ const Dashboard = () => {
         </Link>
 
         <Link to="/workout">
-          <Card hoverEffect glow="accent" className="p-5 h-full flex flex-col justify-between">
+          <Card hoverEffect glow="accent" className="p-6 sm:p-7 h-full flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center mb-4 shadow-md shadow-emerald-500/20">
                 <Dumbbell className="w-6 h-6" />
@@ -796,7 +797,7 @@ const Dashboard = () => {
         </Link>
 
         <Link to="/todos">
-          <Card hoverEffect glow="purple" className="p-5 h-full flex flex-col justify-between">
+          <Card hoverEffect glow="purple" className="p-6 sm:p-7 h-full flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center mb-4 shadow-md shadow-indigo-500/20">
                 <CheckSquare className="w-6 h-6" />
@@ -815,7 +816,7 @@ const Dashboard = () => {
         </Link>
 
         <Link to="/chatbot">
-          <Card hoverEffect glow="cyan" className="p-5 h-full flex flex-col justify-between">
+          <Card hoverEffect glow="cyan" className="p-6 sm:p-7 h-full flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 text-white flex items-center justify-center mb-4 shadow-md shadow-cyan-500/20">
                 <Bot className="w-6 h-6" />
@@ -836,7 +837,7 @@ const Dashboard = () => {
 
       {/* ─── TIPS SECTION ──────────────────────────────────────────────── */}
       {stats?.diet?.tips && stats.diet.tips.length > 0 && (
-        <Card className="p-6 border-amber-500/30">
+        <Card className="p-6 sm:p-8 border-amber-500/30">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Lightbulb className="w-5 h-5" />
@@ -845,7 +846,7 @@ const Dashboard = () => {
               Personalized Recommendations
             </h3>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
             {stats.diet.tips.map((tip, index) => (
               <div
                 key={index}
@@ -858,7 +859,7 @@ const Dashboard = () => {
           </div>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

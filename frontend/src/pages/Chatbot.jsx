@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, RefreshCw } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const quickQuestions = [
   'Best vegetarian protein sources',
@@ -81,7 +82,7 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <PageContainer maxWidth="max-w-5xl" className="py-10 sm:py-12 lg:py-16 space-y-8 sm:space-y-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -120,9 +121,9 @@ const Chatbot = () => {
       </div>
 
       {/* Main Chat Container */}
-      <Card className="overflow-hidden flex flex-col h-[640px] border-slate-200/80 dark:border-white/10 shadow-2xl">
+      <Card className="overflow-hidden flex flex-col h-[700px] sm:h-[750px] border-slate-200/80 dark:border-white/10 shadow-2xl">
         {/* Messages Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
@@ -192,7 +193,7 @@ const Chatbot = () => {
         </div>
 
         {/* Quick Prompt Chips */}
-        <div className="px-4 sm:px-6 py-2 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-2 overflow-x-auto">
+        <div className="px-6 py-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-2 overflow-x-auto">
           <span className="text-[11px] font-bold text-slate-400 shrink-0">Try:</span>
           {quickQuestions.map((q) => (
             <button
@@ -209,7 +210,7 @@ const Chatbot = () => {
         {/* Input Bar */}
         <form
           onSubmit={handleSendMessage}
-          className="p-3 sm:p-4 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-900 flex items-center gap-2"
+          className="p-4 sm:p-5 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-900 flex items-center gap-3"
         >
           <input
             type="text"
@@ -233,7 +234,7 @@ const Chatbot = () => {
           </Button>
         </form>
       </Card>
-    </div>
+    </PageContainer>
   );
 };
 

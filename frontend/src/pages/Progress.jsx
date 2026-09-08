@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button, Card, CardHeader, CardTitle, Badge, Modal, EmptyState, AnimatedCounter, Skeleton } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 // Custom Recharts Tooltip matching design system
 const CustomChartTooltip = ({ active, payload, label }) => {
@@ -172,27 +173,27 @@ const Progress = () => {
 
   if (loading && !progressData) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="space-y-2">
+      <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
+        <div className="space-y-3">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-5 w-96" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-6 lg:gap-8">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-28" />
           ))}
         </div>
         <Skeleton className="h-80" />
-      </div>
+      </PageContainer>
     );
   }
 
   const hasChartData = progressData?.chartData && progressData.chartData.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── HEADER ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="brand" size="sm">
@@ -239,7 +240,7 @@ const Progress = () => {
 
       {/* ─── DIET PROGRESS BANNER ───────────────────────────────────────── */}
       {dietStats && dietStats.totalMeals > 0 && (
-        <Card className="p-6 border-cyan-500/30">
+        <Card className="p-6 sm:p-8 border-cyan-500/30">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/25">
@@ -276,8 +277,8 @@ const Progress = () => {
 
       {/* ─── SUMMARY METRICS CARDS ─────────────────────────────────────── */}
       {progressData?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          <Card className="p-4 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+          <Card className="p-5 sm:p-6 text-center">
             <Calendar className="w-5 h-5 text-cyan-500 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter value={progressData.summary.totalDays || 0} />
@@ -285,7 +286,7 @@ const Progress = () => {
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">Days Tracked</p>
           </Card>
 
-          <Card className="p-4 text-center">
+          <Card className="p-5 sm:p-6 text-center">
             <Flame className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter value={progressData.summary.averageCaloriesConsumed || 0} />
@@ -293,7 +294,7 @@ const Progress = () => {
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Cal / Day</p>
           </Card>
 
-          <Card className="p-4 text-center">
+          <Card className="p-5 sm:p-6 text-center">
             <Activity className="w-5 h-5 text-emerald-500 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter value={progressData.summary.averageCaloriesBurned || 0} />
@@ -301,7 +302,7 @@ const Progress = () => {
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Burned</p>
           </Card>
 
-          <Card className="p-4 text-center">
+          <Card className="p-5 sm:p-6 text-center">
             <TrendingUp className="w-5 h-5 text-indigo-500 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               {progressData.summary.weightChange > 0 ? '+' : ''}
@@ -314,7 +315,7 @@ const Progress = () => {
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">Weight Shift</p>
           </Card>
 
-          <Card className="p-4 text-center">
+          <Card className="p-5 sm:p-6 text-center">
             <Droplet className="w-5 h-5 text-cyan-400 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter
@@ -326,7 +327,7 @@ const Progress = () => {
             <p className="text-[11px] text-slate-400 font-medium mt-0.5">Avg Water</p>
           </Card>
 
-          <Card className="p-4 text-center">
+          <Card className="p-5 sm:p-6 text-center">
             <Moon className="w-5 h-5 text-purple-400 mx-auto mb-1.5" />
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter
@@ -342,9 +343,9 @@ const Progress = () => {
 
       {/* ─── CHARTS CENTERPIECE ────────────────────────────────────────── */}
       {hasChartData ? (
-        <div className="space-y-6">
+        <div className="space-y-8 sm:space-y-10">
           {/* Weight Line Chart */}
-          <Card className="p-6">
+          <Card className="p-6 sm:p-8">
             <CardHeader className="p-0 pb-6 flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -360,7 +361,7 @@ const Progress = () => {
               </Badge>
             </CardHeader>
 
-            <div className="h-72 w-full pt-2">
+            <div className="h-80 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={progressData.chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
@@ -391,7 +392,7 @@ const Progress = () => {
           </Card>
 
           {/* Calorie Intake vs Burn Chart */}
-          <Card className="p-6">
+          <Card className="p-6 sm:p-8">
             <CardHeader className="p-0 pb-6 flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -407,7 +408,7 @@ const Progress = () => {
               </Badge>
             </CardHeader>
 
-            <div className="h-72 w-full pt-2">
+            <div className="h-80 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={progressData.chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
@@ -442,13 +443,13 @@ const Progress = () => {
           </Card>
 
           {/* Water & Sleep Side-by-Side */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
+            <Card className="p-6 sm:p-8">
               <CardTitle className="text-base flex items-center gap-2 mb-4">
                 <Droplet className="w-4 h-4 text-cyan-400" />
                 <span>Hydration Tracking (Liters)</span>
               </CardTitle>
-              <div className="h-52 w-full">
+              <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={progressData.chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
@@ -476,12 +477,12 @@ const Progress = () => {
               </div>
             </Card>
 
-            <Card className="p-6">
+            <Card className="p-6 sm:p-8">
               <CardTitle className="text-base flex items-center gap-2 mb-4">
                 <Moon className="w-4 h-4 text-purple-400" />
                 <span>Sleep Cycles (Hours)</span>
               </CardTitle>
-              <div className="h-52 w-full">
+              <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={progressData.chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
@@ -548,35 +549,6 @@ const Progress = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Calories Consumed
-              </label>
-              <input
-                type="number"
-                name="caloriesConsumed"
-                value={formData.caloriesConsumed}
-                onChange={handleInputChange}
-                placeholder="e.g. 1850"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Calories Burned (Workout)
-              </label>
-              <input
-                type="number"
-                name="caloriesBurned"
-                value={formData.caloriesBurned}
-                onChange={handleInputChange}
-                placeholder="e.g. 450"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Water Intake (Liters)
@@ -591,10 +563,41 @@ const Progress = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
+          </div>
 
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Sleep Hours
+                Calories Consumed (kcal)
+              </label>
+              <input
+                type="number"
+                name="caloriesConsumed"
+                value={formData.caloriesConsumed}
+                onChange={handleInputChange}
+                placeholder="e.g. 1850"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Calories Burned (Exercise)
+              </label>
+              <input
+                type="number"
+                name="caloriesBurned"
+                value={formData.caloriesBurned}
+                onChange={handleInputChange}
+                placeholder="e.g. 350"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Sleep Duration (Hours)
               </label>
               <input
                 type="number"
@@ -606,10 +609,9 @@ const Progress = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
-
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Daily Mood
+                Today's Energy & Mood
               </label>
               <select
                 name="mood"
@@ -647,7 +649,7 @@ const Progress = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 };
 

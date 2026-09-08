@@ -11,6 +11,7 @@ import {
   Repeat,
 } from 'lucide-react';
 import { Button, Card, Badge, Modal, EmptyState, AnimatedCounter, Skeleton } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const categoryConfig = {
   workout: { name: 'Workout', icon: '💪', badge: 'brand', emoji: '🏋️' },
@@ -141,20 +142,20 @@ const Todos = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── HEADER ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1.5">
             <Badge variant="brand" size="sm">
               Habits & Disciplines
             </Badge>
             <span className="text-xs text-slate-400">• Daily Accountability</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
             Daily Fitness Tasks ✅
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1.5">
             Manage hydration, meal logging, workout splits, and recovery routines.
           </p>
         </div>
@@ -172,32 +173,32 @@ const Todos = () => {
 
       {/* ─── STATS SUMMARY CARDS ───────────────────────────────────────── */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 text-center">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <Card className="p-6 sm:p-7 text-center">
             <span className="text-xs text-slate-400 font-semibold block mb-1">Total Tasks</span>
             <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               <AnimatedCounter value={stats.total || 0} />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">All active items</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">All active items</p>
           </Card>
 
-          <Card className="p-5 text-center">
+          <Card className="p-6 sm:p-7 text-center">
             <span className="text-xs text-slate-400 font-semibold block mb-1">Completed</span>
             <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
               <AnimatedCounter value={stats.completed || 0} />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Successfully marked</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Successfully marked</p>
           </Card>
 
-          <Card className="p-5 text-center">
+          <Card className="p-6 sm:p-7 text-center">
             <span className="text-xs text-slate-400 font-semibold block mb-1">Pending</span>
             <div className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">
               <AnimatedCounter value={stats.pending || 0} />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">To do today</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">To do today</p>
           </Card>
 
-          <Card className="p-5 text-center">
+          <Card className="p-6 sm:p-7 text-center">
             <span className="text-xs text-slate-400 font-semibold block mb-1">Completion Rate</span>
             <div className="text-2xl sm:text-3xl font-black text-cyan-600 dark:text-cyan-400">
               <AnimatedCounter
@@ -205,13 +206,13 @@ const Todos = () => {
                 suffix="%"
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Habit score</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Habit score</p>
           </Card>
         </div>
       )}
 
       {/* ─── CATEGORY & STATUS FILTERS ─────────────────────────────────── */}
-      <Card className="p-4 space-y-3">
+      <Card className="p-5 sm:p-6 space-y-4">
         {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <button
@@ -290,7 +291,7 @@ const Todos = () => {
           }
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <AnimatePresence initial={false}>
             {todos.map((todo) => {
               const cat = categoryConfig[todo.category] || categoryConfig.other;
@@ -306,7 +307,7 @@ const Todos = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <Card
-                    className={`p-4 sm:p-5 flex items-center justify-between gap-4 border transition-all ${
+                    className={`p-5 sm:p-6 flex items-center justify-between gap-4 border transition-all ${
                       todo.completed
                         ? 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-white/5 opacity-70'
                         : 'hover:border-cyan-500/40 shadow-sm'
@@ -609,7 +610,7 @@ const Todos = () => {
           </form>
         </Modal>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

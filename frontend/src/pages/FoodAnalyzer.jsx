@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button, Card, Badge, AnimatedCounter } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const FoodAnalyzer = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -99,9 +100,9 @@ const FoodAnalyzer = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── HEADER ────────────────────────────────────────────────────── */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
+      <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4">
         <div className="inline-flex items-center gap-2">
           <Badge variant="brand" size="sm">
             AI Computer Vision
@@ -118,11 +119,11 @@ const FoodAnalyzer = () => {
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         {/* ─── UPLOAD / SCAN AREA (Left 5 cols) ────────────────────────── */}
-        <div className="lg:col-span-5 space-y-4">
-          <Card className="p-6">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <div className="lg:col-span-5 space-y-5">
+          <Card className="p-6 sm:p-8">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2.5">
               <Camera className="w-5 h-5 text-cyan-500" />
               <span>Capture / Upload Dish</span>
             </h2>
@@ -133,7 +134,7 @@ const FoodAnalyzer = () => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => document.getElementById('foodFileInput')?.click()}
-                className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
+                className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 lg:p-14 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3.5 ${
                   isDragOver
                     ? 'border-cyan-500 bg-cyan-500/10'
                     : 'border-slate-300 dark:border-white/15 hover:border-cyan-500/50 hover:bg-slate-50 dark:hover:bg-white/5'
@@ -225,14 +226,14 @@ const FoodAnalyzer = () => {
         {/* ─── ANALYSIS RESULTS (Right 7 cols) ─────────────────────────── */}
         <div className="lg:col-span-7">
           {!result ? (
-            <Card className="p-8 sm:p-12 text-center h-[420px] flex flex-col items-center justify-center">
+            <Card className="p-8 sm:p-12 lg:p-16 text-center h-[460px] sm:h-[480px] flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 flex items-center justify-center mb-4 shadow-inner">
                 <Apple className="w-8 h-8" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
                 Nutritional Breakdown
               </h3>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
                 Take or upload a picture of any breakfast, lunch, or dinner plate to reveal verified calories, macros, and benefits.
               </p>
             </Card>
@@ -241,10 +242,10 @@ const FoodAnalyzer = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
-              className="space-y-6"
+              className="space-y-6 sm:space-y-8"
             >
               {/* Detected Dish Title Card */}
-              <Card className="p-6 bg-gradient-to-r from-cyan-500/10 via-teal-500/10 to-indigo-500/10 border-cyan-500/30">
+              <Card className="p-6 sm:p-8 bg-gradient-to-r from-cyan-500/10 via-teal-500/10 to-indigo-500/10 border-cyan-500/30">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
@@ -261,56 +262,56 @@ const FoodAnalyzer = () => {
               </Card>
 
               {/* Nutritional Macro Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Card className="p-4 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+                <Card className="p-5 sm:p-6 text-center">
                   <Flame className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                   <span className="text-xs text-slate-400 font-semibold block">Calories</span>
-                  <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 mt-1">
                     <AnimatedCounter value={result.nutrients?.calories || 0} />
                   </p>
-                  <span className="text-[10px] text-slate-400">kcal / 100g</span>
+                  <span className="text-[10px] sm:text-xs text-slate-400">kcal / 100g</span>
                 </Card>
 
-                <Card className="p-4 text-center">
+                <Card className="p-5 sm:p-6 text-center">
                   <Zap className="w-4 h-4 text-rose-500 mx-auto mb-1" />
                   <span className="text-xs text-slate-400 font-semibold block">Protein</span>
-                  <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-1">
                     <AnimatedCounter value={result.nutrients?.protein || 0} suffix="g" />
                   </p>
-                  <span className="text-[10px] text-slate-400">grams</span>
+                  <span className="text-[10px] sm:text-xs text-slate-400">grams</span>
                 </Card>
 
-                <Card className="p-4 text-center">
+                <Card className="p-5 sm:p-6 text-center">
                   <TrendingUp className="w-4 h-4 text-cyan-500 mx-auto mb-1" />
                   <span className="text-xs text-slate-400 font-semibold block">Carbs</span>
-                  <p className="text-2xl font-black text-cyan-600 dark:text-cyan-400 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-cyan-600 dark:text-cyan-400 mt-1">
                     <AnimatedCounter value={result.nutrients?.carbs || 0} suffix="g" />
                   </p>
-                  <span className="text-[10px] text-slate-400">grams</span>
+                  <span className="text-[10px] sm:text-xs text-slate-400">grams</span>
                 </Card>
 
-                <Card className="p-4 text-center">
+                <Card className="p-5 sm:p-6 text-center">
                   <Droplet className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
                   <span className="text-xs text-slate-400 font-semibold block">Fats</span>
-                  <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
                     <AnimatedCounter value={result.nutrients?.fats || 0} suffix="g" />
                   </p>
-                  <span className="text-[10px] text-slate-400">grams</span>
+                  <span className="text-[10px] sm:text-xs text-slate-400">grams</span>
                 </Card>
               </div>
 
               {/* Health Benefits */}
               {result.benefits && result.benefits.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                <Card className="p-6 sm:p-8">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5 mb-4">
                     <Heart className="w-4 h-4 text-emerald-500" />
                     <span>Health & Dietary Benefits</span>
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {result.benefits.map((b, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300"
+                        className="p-3.5 sm:p-4 rounded-xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-start gap-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300"
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{b}</span>
@@ -322,8 +323,8 @@ const FoodAnalyzer = () => {
 
               {/* Additional Information */}
               {result.additionalInfo && (
-                <Card className="p-5 border-cyan-500/20 bg-cyan-500/5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-300 mb-1 flex items-center gap-1.5">
+                <Card className="p-6 sm:p-7 border-cyan-500/20 bg-cyan-500/5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-300 mb-1.5 flex items-center gap-1.5">
                     <Info className="w-3.5 h-3.5" />
                     <span>Nutritionist Notes</span>
                   </h4>
@@ -346,7 +347,7 @@ const FoodAnalyzer = () => {
           )}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -18,6 +18,7 @@ import { fatLossWorkouts } from '../data/fatLossWorkouts';
 import { muscleGainWorkouts } from '../data/muscleGainWorkouts';
 import { stayFitWorkouts } from '../data/stayFitWorkouts';
 import { Button, Card, Badge, AnimatedCounter } from '../components/ui';
+import { PageContainer } from '../components/PageContainer';
 
 const Workout = () => {
   const [selectedGoal, setSelectedGoal] = useState('fatLoss');
@@ -101,7 +102,7 @@ const Workout = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer className="py-10 sm:py-12 lg:py-16 space-y-10 sm:space-y-12">
       {/* ─── HEADER ────────────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
@@ -130,9 +131,9 @@ const Workout = () => {
       </div>
 
       {/* ─── GOAL & LEVEL SELECTORS ────────────────────────────────────── */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
         {/* Goal Selector Tabs */}
-        <Card className="p-5 sm:p-6">
+        <Card className="p-6 sm:p-8">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
             <Target className="w-4 h-4 text-cyan-500" />
             <span>Target Fitness Focus</span>
@@ -169,7 +170,7 @@ const Workout = () => {
         </Card>
 
         {/* Level Selector Tabs */}
-        <Card className="p-5 sm:p-6">
+        <Card className="p-6 sm:p-8">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-500" />
             <span>Experience & Intensity</span>
@@ -200,7 +201,7 @@ const Workout = () => {
       </div>
 
       {/* ─── WEEKLY COMPLETION STRIP ───────────────────────────────────── */}
-      <Card className="p-5 sm:p-6 space-y-4">
+      <Card className="p-6 sm:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
@@ -249,7 +250,7 @@ const Workout = () => {
       </Card>
 
       {/* ─── 7-DAY WORKOUT CARDS ───────────────────────────────────────── */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
         {workoutPlan.map((day, idx) => {
           const TypeIcon = typeIcons[day.type] || Dumbbell;
           const isCompleted = completedDays[day.day];
@@ -270,7 +271,7 @@ const Workout = () => {
               >
                 <div>
                   {/* Day Header Banner */}
-                  <div className="p-5 pb-4 border-b border-slate-200/80 dark:border-white/10 flex items-start justify-between gap-3">
+                  <div className="p-6 pb-5 border-b border-slate-200/80 dark:border-white/10 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
                         <TypeIcon className="w-5 h-5" />
@@ -309,7 +310,7 @@ const Workout = () => {
                   </div>
 
                   {/* Day Meta (Duration & Calorie Estimate) */}
-                  <div className="px-5 py-2.5 bg-slate-100/60 dark:bg-slate-800/40 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <div className="px-6 py-3 bg-slate-100/60 dark:bg-slate-800/40 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 font-medium">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       {day.duration || '40 min'}
@@ -321,7 +322,7 @@ const Workout = () => {
                   </div>
 
                   {/* Exercise List */}
-                  <div className="p-5 space-y-3">
+                  <div className="p-6 space-y-3.5">
                     {day.isRestDay ? (
                       <div className="py-6 text-center text-slate-500 dark:text-slate-400 space-y-2">
                         <p className="text-2xl">🧘</p>
@@ -336,7 +337,7 @@ const Workout = () => {
                       day.exercises?.map((ex, exIdx) => (
                         <div
                           key={exIdx}
-                          className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 space-y-1"
+                          className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 space-y-1"
                         >
                           <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
                             <span>{ex.name}</span>
@@ -356,7 +357,7 @@ const Workout = () => {
                 </div>
 
                 {/* Footer status */}
-                <div className="p-5 pt-0">
+                <div className="p-6 pt-0">
                   <Button
                     variant={isCompleted ? 'accent' : 'outline'}
                     size="sm"
@@ -372,7 +373,7 @@ const Workout = () => {
           );
         })}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
