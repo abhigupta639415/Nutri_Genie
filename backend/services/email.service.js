@@ -1,9 +1,10 @@
+const Brevo = require('@getbrevo/brevo');
 const axios = require('axios');
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 /**
- * Sends transactional email via Brevo REST API (HTTPS on port 443).
+ * Sends transactional email via Brevo TransactionalEmailsApi (HTTPS on port 443).
  * Operates reliably on cloud environments (like Render) with no SMTP port restrictions.
  */
 const sendEmail = async (to, subject, text, html) => {
@@ -13,7 +14,7 @@ const sendEmail = async (to, subject, text, html) => {
 
   if (!apiKey) {
     const errorMsg = 'BREVO_API_KEY environment variable is not configured in Render.';
-    console.error(`[EMAIL SERVICE - BREVO] ${errorMsg}`);
+    console.error(`[EMAIL SERVICE - BREVO] Configuration error: ${errorMsg}`);
     return {
       success: false,
       code: 'MISSING_BREVO_KEY',
@@ -21,7 +22,7 @@ const sendEmail = async (to, subject, text, html) => {
     };
   }
 
-  const payload = {
+  const emailPayload = {
     sender: {
       name: senderName,
       email: senderEmail
@@ -38,25 +39,50 @@ const sendEmail = async (to, subject, text, html) => {
   };
 
   try {
-    const response = await axios.post(BREVO_API_URL, payload, {
+    // 1. Send via Brevo SDK
+    if (Brevo.BrevoClient) {
+      const client = new Brevo.BrevoClient({ apiKey });
+      const result = await client.transactionalEmails.sendTransacEmail(emailPayload);
+      const messageId = result?.messageId || result?.messageIds?.[0] || 'sent';
+      console.log(`[EMAIL SERVICE - BREVO] Email sent successfully via Brevo SDK to ${to} (Message ID: ${messageId})`);
+      return {
+        success: true,
+        data: result,
+        messageId
+      };
+    } else if (Brevo.TransactionalEmailsApi) {
+      const apiInstance = new Brevo.TransactionalEmailsApi();
+      apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys?.apiKey || 0, apiKey);
+      const result = await apiInstance.sendTransacEmail(emailPayload);
+      const messageId = result?.messageId || 'sent';
+      console.log(`[EMAIL SERVICE - BREVO] Email sent successfully via Brevo SDK to ${to} (Message ID: ${messageId})`);
+      return {
+        success: true,
+        data: result,
+        messageId
+      };
+    }
+
+    // 2. Direct Brevo REST API fallback via axios
+    const response = await axios.post(BREVO_API_URL, emailPayload, {
       headers: {
         'api-key': apiKey,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      timeout: 10000 // 10-second timeout
+      timeout: 10000
     });
 
     const messageId = response.data?.messageId || response.headers?.['message-id'];
-    console.log(`[EMAIL SERVICE - BREVO] Email sent successfully to ${to} (Message ID: ${messageId})`);
+    console.log(`[EMAIL SERVICE - BREVO] Email sent successfully via Brevo REST API to ${to} (Message ID: ${messageId})`);
     return {
       success: true,
       data: response.data,
       messageId
     };
   } catch (error) {
-    const brevoData = error.response?.data;
-    const statusCode = error.response?.status;
+    const brevoData = error.response?.data || error.body;
+    const statusCode = error.response?.status || error.statusCode;
 
     console.error('[EMAIL SERVICE - BREVO] Delivery error:', {
       status: statusCode,
@@ -68,12 +94,12 @@ const sendEmail = async (to, subject, text, html) => {
     let specificCode = brevoData?.code || (statusCode ? `HTTP_${statusCode}` : 'BREVO_ERROR');
 
     // Diagnose common Brevo API issues
-    if (statusCode === 401 || specificCode === 'unauthorized') {
+    if (statusCode === 401 || specificCode === 'unauthorized' || (specificMessage && specificMessage.includes('Key not found'))) {
       specificCode = 'BREVO_UNAUTHORIZED';
-      specificMessage = 'Invalid Brevo API key. Please check BREVO_API_KEY in Render environment variables.';
+      specificMessage = 'Invalid Brevo API key. Please verify BREVO_API_KEY in Render environment variables.';
     } else if (statusCode === 400 && specificMessage.toLowerCase().includes('sender')) {
       specificCode = 'BREVO_SENDER_UNVERIFIED';
-      specificMessage = `Sender email "${senderEmail}" is not verified in Brevo. Log in to Brevo > Senders & IP and verify ${senderEmail}.`;
+      specificMessage = `Sender email "${senderEmail}" is not verified in Brevo. Log in to Brevo > Senders, Domains & IPs and verify ${senderEmail}.`;
     }
 
     return {
