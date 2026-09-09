@@ -1,22 +1,32 @@
 const nodemailer = require('nodemailer');
 
-// Nodemailer transporter configured with Gmail service
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : ''
-  }
-});
+// Factory function to create transporter with current environment credentials
+const createTransporter = () => {
+  const user = (process.env.EMAIL_USER || '').trim();
+  const pass = (process.env.EMAIL_PASS || '').replace(/[\s"']/g, '');
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass }
+  });
+};
+
+// Exported transporter instance for backward compatibility
+const transporter = createTransporter();
 
 // Function to send email via Gmail SMTP
 const sendEmail = async (to, subject, text, html) => {
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+  const emailUser = (process.env.EMAIL_USER || '').trim();
+  const emailPass = (process.env.EMAIL_PASS || '').replace(/[\s"']/g, '');
 
   if (!emailUser || !emailPass) {
-    const errorMsg = 'EMAIL_USER or EMAIL_PASS is not configured in Render environment variables.';
-    console.error(`[EMAIL SERVICE] ${errorMsg}`);
+    const errorMsg = !emailUser && !emailPass
+      ? 'Both EMAIL_USER and EMAIL_PASS environment variables are missing in Render.'
+      : !emailUser
+      ? 'EMAIL_USER environment variable is missing in Render.'
+      : 'EMAIL_PASS environment variable is missing in Render.';
+
+    console.error(`[EMAIL SERVICE] Configuration error: ${errorMsg}`);
     return {
       success: false,
       code: 'MISSING_CREDENTIALS',
@@ -25,6 +35,7 @@ const sendEmail = async (to, subject, text, html) => {
   }
 
   try {
+    const activeTransporter = createTransporter();
     const mailOptions = {
       from: `"NutriGenie" <${emailUser}>`,
       to,
@@ -33,7 +44,7 @@ const sendEmail = async (to, subject, text, html) => {
       html
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await activeTransporter.sendMail(mailOptions);
     console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${info.messageId})`);
     return { success: true, data: info, messageId: info.messageId };
   } catch (error) {
@@ -43,12 +54,15 @@ const sendEmail = async (to, subject, text, html) => {
     let specificCode = error.code || 'SMTP_ERROR';
 
     // Diagnose common Gmail SMTP errors on cloud hosts like Render
-    if (error.code === 'EAUTH' || (error.response && error.response.includes('535'))) {
+    if (error.code === 'EAUTH' || (error.response && error.response.includes('535')) || (error.message && error.message.includes('Username and Password not accepted'))) {
       specificCode = 'GMAIL_AUTH_FAILED';
-      specificMessage = 'Gmail authentication failed (EAUTH 535). Ensure 2-Step Verification is active on your Google Account and you are using a 16-character Google App Password (not your personal Gmail password).';
+      specificMessage = 'Invalid login: 535-5.7.8 Username and Password not accepted. Ensure 2-Step Verification is active on your Google Account and you are using a 16-character Google App Password (not your personal Gmail account password).';
+    } else if (error.message && error.message.includes('Missing credentials')) {
+      specificCode = 'MISSING_CREDENTIALS';
+      specificMessage = 'Missing credentials for PLAIN: EMAIL_USER or EMAIL_PASS is empty or not loaded.';
     } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKETTIMEDOUT' || error.code === 'ECONNREFUSED') {
       specificCode = 'SMTP_CONNECTION_BLOCKED';
-      specificMessage = `Connection to smtp.gmail.com timed out (${error.code}). Render's server network may be throttling or blocking outbound SMTP ports (465/587).`;
+      specificMessage = `Connection to smtp.gmail.com timed out (${error.code}). Render server network may be throttling or blocking outbound SMTP ports (465/587).`;
     } else if (error.code === 'ENOTFOUND' || error.code === 'EDNS') {
       specificCode = 'DNS_LOOKUP_FAILED';
       specificMessage = `DNS resolution for smtp.gmail.com failed (${error.code}). Please verify internet connectivity on the server.`;

@@ -92,18 +92,18 @@ const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ message: 'Please provide an email address' });
+      return res.status(400).json({ success: false, message: 'Please provide an email address' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found with this email' });
+      return res.status(404).json({ success: false, message: 'User not found with this email' });
     }
 
     if (user.isVerified) {
-      return res.status(400).json({ message: 'Email is already verified' });
+      return res.status(400).json({ success: false, message: 'Email is already verified' });
     }
 
     // Rate-limit: max 1 request per 60 seconds
@@ -112,6 +112,7 @@ const sendOtp = async (req, res) => {
       if (elapsedMs < OTP_RATE_LIMIT_MS) {
         const waitSeconds = Math.ceil((OTP_RATE_LIMIT_MS - elapsedMs) / 1000);
         return res.status(429).json({
+          success: false,
           message: `Please wait ${waitSeconds} seconds before requesting a new OTP.`,
           waitSeconds
         });
@@ -122,35 +123,73 @@ const sendOtp = async (req, res) => {
     const now = new Date();
     const otpExpiry = new Date(now.getTime() + OTP_EXPIRY_MS);
 
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    user.otpLastSentAt = now;
-    user.verificationToken = otp;
-    user.verificationTokenExpires = otpExpiry;
-    await user.save();
-
-    const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
-
-    if (!emailResult.success) {
-      console.error(`[AUTH] Failed to send OTP email to ${user.email}:`, {
-        code: emailResult.code,
-        error: emailResult.error,
-        details: emailResult.details
-      });
+    // 1. Database Write: save OTP & expiry to MongoDB
+    try {
+      await User.findByIdAndUpdate(
+        user._id,
+        {
+          $set: {
+            otp,
+            otpExpiry,
+            otpLastSentAt: now,
+            verificationToken: otp,
+            verificationTokenExpires: otpExpiry
+          }
+        },
+        { runValidators: false }
+      );
+      // Sync local in-memory user instance
+      user.otp = otp;
+      user.otpExpiry = otpExpiry;
+      user.otpLastSentAt = now;
+      user.verificationToken = otp;
+      user.verificationTokenExpires = otpExpiry;
+    } catch (dbError) {
+      console.error('[AUTH send-otp] Database write failed when saving OTP:', dbError);
       return res.status(500).json({
         success: false,
-        code: emailResult.code || 'EMAIL_SEND_FAILED',
-        message: emailResult.error || 'Failed to send OTP email. Please check server logs.'
+        code: 'DATABASE_ERROR',
+        message: `Database error storing OTP: ${dbError.message}`
       });
     }
 
+    // 2. Email Dispatch: deliver OTP email via Nodemailer Gmail SMTP
+    try {
+      const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
+
+      if (!emailResult.success) {
+        console.error(`[AUTH send-otp] Nodemailer delivery failed for ${user.email}:`, {
+          code: emailResult.code,
+          error: emailResult.error,
+          details: emailResult.details
+        });
+        return res.status(500).json({
+          success: false,
+          code: emailResult.code || 'EMAIL_SEND_FAILED',
+          message: emailResult.error || 'Failed to deliver OTP email via Gmail SMTP.'
+        });
+      }
+    } catch (emailDispatchError) {
+      console.error(`[AUTH send-otp] Unexpected exception during email dispatch to ${user.email}:`, emailDispatchError);
+      return res.status(500).json({
+        success: false,
+        code: emailDispatchError.code || 'EMAIL_DISPATCH_EXCEPTION',
+        message: emailDispatchError.message || 'Failed to dispatch verification email.'
+      });
+    }
+
+    console.log(`[AUTH send-otp] OTP successfully generated and emailed to ${user.email}`);
     res.json({
       success: true,
       message: 'A fresh 6-digit OTP has been sent to your email.'
     });
   } catch (error) {
-    console.error('Error in sendOtp:', error);
-    res.status(500).json({ message: error.message });
+    console.error('[AUTH send-otp] Global handler caught error:', error);
+    res.status(500).json({
+      success: false,
+      code: error.code || 'INTERNAL_SERVER_ERROR',
+      message: error.message || 'Internal server error occurred.'
+    });
   }
 };
 
