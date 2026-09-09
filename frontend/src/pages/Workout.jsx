@@ -26,6 +26,7 @@ import { stayFitWorkouts } from '../data/stayFitWorkouts';
 import { useAuth } from '../context/AuthContext';
 import { Button, Card, Badge, AnimatedCounter, Skeleton } from '../components/ui';
 import { PageContainer } from '../components/PageContainer';
+import WorkoutMusicPlayer from '../components/WorkoutMusicPlayer';
 
 const Workout = () => {
   const { user } = useAuth();
@@ -429,6 +430,9 @@ const Workout = () => {
           Reset Workout Cycle
         </Button>
       </div>
+
+      {/* ─── WORKOUT MUSIC PLAYER ────────────────────────────────────── */}
+      <WorkoutMusicPlayer />
 
       {/* ─── GOAL & LEVEL SELECTORS ────────────────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
