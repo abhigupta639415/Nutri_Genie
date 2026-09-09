@@ -290,10 +290,6 @@ const login = async (req, res) => {
       });
     }
 
-    emailService.sendLoginEmail(user.email, user.name)
-      .catch((error) => {
-        console.error('Login email failed:', error);
-      });
 
     res.json({
       _id: user._id,
