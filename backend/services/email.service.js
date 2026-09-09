@@ -1,84 +1,86 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
-// Factory function to create transporter with current environment credentials forced over IPv4
-const createTransporter = () => {
-  const user = (process.env.EMAIL_USER || '').trim();
-  const pass = (process.env.EMAIL_PASS || '').replace(/[\s"']/g, '');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-    family: 4 // Force IPv4 to prevent ENETUNREACH on Render
-  });
-};
-
-// Exported transporter instance for backward compatibility
-const transporter = createTransporter();
-
-// Function to send email via Gmail SMTP
+/**
+ * Sends transactional email via Brevo REST API (HTTPS on port 443).
+ * Operates reliably on cloud environments (like Render) with no SMTP port restrictions.
+ */
 const sendEmail = async (to, subject, text, html) => {
-  const emailUser = (process.env.EMAIL_USER || '').trim();
-  const emailPass = (process.env.EMAIL_PASS || '').replace(/[\s"']/g, '');
+  const apiKey = (process.env.BREVO_API_KEY || '').trim();
+  const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'nutrigeniehealth@gmail.com').trim();
+  const senderName = (process.env.BREVO_SENDER_NAME || 'NutriGenie').trim();
 
-  if (!emailUser || !emailPass) {
-    const errorMsg = !emailUser && !emailPass
-      ? 'Both EMAIL_USER and EMAIL_PASS environment variables are missing in Render.'
-      : !emailUser
-      ? 'EMAIL_USER environment variable is missing in Render.'
-      : 'EMAIL_PASS environment variable is missing in Render.';
-
-    console.error(`[EMAIL SERVICE] Configuration error: ${errorMsg}`);
+  if (!apiKey) {
+    const errorMsg = 'BREVO_API_KEY environment variable is not configured in Render.';
+    console.error(`[EMAIL SERVICE - BREVO] ${errorMsg}`);
     return {
       success: false,
-      code: 'MISSING_CREDENTIALS',
+      code: 'MISSING_BREVO_KEY',
       error: errorMsg
     };
   }
 
+  const payload = {
+    sender: {
+      name: senderName,
+      email: senderEmail
+    },
+    to: [
+      {
+        email: to,
+        name: to.split('@')[0] || 'NutriGenie User'
+      }
+    ],
+    subject,
+    htmlContent: html,
+    textContent: text
+  };
+
   try {
-    const activeTransporter = createTransporter();
-    const mailOptions = {
-      from: `"NutriGenie" <${emailUser}>`,
-      to,
-      subject,
-      text,
-      html
+    const response = await axios.post(BREVO_API_URL, payload, {
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      timeout: 10000 // 10-second timeout
+    });
+
+    const messageId = response.data?.messageId || response.headers?.['message-id'];
+    console.log(`[EMAIL SERVICE - BREVO] Email sent successfully to ${to} (Message ID: ${messageId})`);
+    return {
+      success: true,
+      data: response.data,
+      messageId
     };
-
-    const info = await activeTransporter.sendMail(mailOptions);
-    console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${info.messageId})`);
-    return { success: true, data: info, messageId: info.messageId };
   } catch (error) {
-    console.error('[EMAIL SERVICE] Nodemailer delivery error:', error);
+    const brevoData = error.response?.data;
+    const statusCode = error.response?.status;
 
-    let specificMessage = error.message || 'Failed to deliver email via Gmail SMTP';
-    let specificCode = error.code || 'SMTP_ERROR';
+    console.error('[EMAIL SERVICE - BREVO] Delivery error:', {
+      status: statusCode,
+      data: brevoData,
+      message: error.message
+    });
 
-    // Diagnose common Gmail SMTP errors on cloud hosts like Render
-    if (error.code === 'EAUTH' || (error.response && error.response.includes('535')) || (error.message && error.message.includes('Username and Password not accepted'))) {
-      specificCode = 'GMAIL_AUTH_FAILED';
-      specificMessage = 'Invalid login: 535-5.7.8 Username and Password not accepted. Ensure 2-Step Verification is active on your Google Account and you are using a 16-character Google App Password (not your personal Gmail account password).';
-    } else if (error.message && error.message.includes('Missing credentials')) {
-      specificCode = 'MISSING_CREDENTIALS';
-      specificMessage = 'Missing credentials for PLAIN: EMAIL_USER or EMAIL_PASS is empty or not loaded.';
-    } else if (error.code === 'ENETUNREACH') {
-      specificCode = 'NETWORK_UNREACHABLE';
-      specificMessage = `Network unreachable (${error.code}): Connection to Gmail SMTP failed over IPv6. Ensure family: 4 is configured.`;
-    } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKETTIMEDOUT' || error.code === 'ECONNREFUSED') {
-      specificCode = 'SMTP_CONNECTION_BLOCKED';
-      specificMessage = `Connection to smtp.gmail.com timed out (${error.code}). Render server network may be throttling or blocking outbound SMTP ports (465/587).`;
-    } else if (error.code === 'ENOTFOUND' || error.code === 'EDNS') {
-      specificCode = 'DNS_LOOKUP_FAILED';
-      specificMessage = `DNS resolution for smtp.gmail.com failed (${error.code}). Please verify internet connectivity on the server.`;
+    let specificMessage = brevoData?.message || error.message || 'Failed to deliver email via Brevo API';
+    let specificCode = brevoData?.code || (statusCode ? `HTTP_${statusCode}` : 'BREVO_ERROR');
+
+    // Diagnose common Brevo API issues
+    if (statusCode === 401 || specificCode === 'unauthorized') {
+      specificCode = 'BREVO_UNAUTHORIZED';
+      specificMessage = 'Invalid Brevo API key. Please check BREVO_API_KEY in Render environment variables.';
+    } else if (statusCode === 400 && specificMessage.toLowerCase().includes('sender')) {
+      specificCode = 'BREVO_SENDER_UNVERIFIED';
+      specificMessage = `Sender email "${senderEmail}" is not verified in Brevo. Log in to Brevo > Senders & IP and verify ${senderEmail}.`;
     }
 
     return {
       success: false,
-      error: specificMessage,
       code: specificCode,
-      details: error
+      error: specificMessage,
+      details: brevoData || error.message
     };
   }
 };
@@ -528,4 +530,4 @@ async function sendOTPEmail(userEmail, userName, otp) {
     return await sendverificationEmail(userEmail, userName, otp);
 }
 
-module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail, sendOTPEmail };
+module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail, sendOTPEmail, sendEmail };

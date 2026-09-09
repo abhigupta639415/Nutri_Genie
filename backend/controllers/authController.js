@@ -58,7 +58,7 @@ const register = async (req, res) => {
     });
 
     if (user) {
-      // Send real OTP via nodemailer Gmail transporter
+      // Send real OTP via Brevo transactional email API
       const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
 
       if (!emailResult.success) {
@@ -153,12 +153,12 @@ const sendOtp = async (req, res) => {
       });
     }
 
-    // 2. Email Dispatch: deliver OTP email via Nodemailer Gmail SMTP
+    // 2. Email Dispatch: deliver OTP email via Brevo REST API (HTTPS)
     try {
       const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
 
       if (!emailResult.success) {
-        console.error(`[AUTH send-otp] Nodemailer delivery failed for ${user.email}:`, {
+        console.error(`[AUTH send-otp] Brevo delivery failed for ${user.email}:`, {
           code: emailResult.code,
           error: emailResult.error,
           details: emailResult.details
@@ -166,7 +166,7 @@ const sendOtp = async (req, res) => {
         return res.status(500).json({
           success: false,
           code: emailResult.code || 'EMAIL_SEND_FAILED',
-          message: emailResult.error || 'Failed to deliver OTP email via Gmail SMTP.'
+          message: emailResult.error || 'Failed to deliver OTP email via Brevo API.'
         });
       }
     } catch (emailDispatchError) {
