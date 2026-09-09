@@ -22,7 +22,9 @@ const {
   sendOtp,
   verifyOtp,
   verifyEmail,
-  resendVerificationCode
+  resendVerificationCode,
+  forgotPassword,
+  resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -34,6 +36,10 @@ router.put('/profile', protect, updateProfile);
 // Real Email OTP Endpoints
 router.post('/send-otp', sendOtp);
 router.post('/verify-otp', verifyOtp);
+
+// Password Reset Endpoints
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Backwards-compatible aliases
 router.post('/verify-email', verifyEmail);

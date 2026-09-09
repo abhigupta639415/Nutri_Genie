@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const emailService = require('../services/email.service');
@@ -352,6 +354,168 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const RESET_RATE_LIMIT_MS = 60 * 1000; // 60 seconds
+
+// @desc    Initiate password reset (dispatches secure reset link via email)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email address' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Generic response message to prevent email enumeration / account snooping
+    const genericResponse = {
+      success: true,
+      message: 'If this email exists, a reset link has been sent.'
+    };
+
+    // If no user exists with this email, return success without revealing anything
+    if (!user) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // Rate-limit: max 1 request per 60 seconds per account
+    if (user.resetPasswordLastRequestedAt) {
+      const elapsedMs = Date.now() - new Date(user.resetPasswordLastRequestedAt).getTime();
+      if (elapsedMs < RESET_RATE_LIMIT_MS) {
+        const waitSeconds = Math.ceil((RESET_RATE_LIMIT_MS - elapsedMs) / 1000);
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${waitSeconds} seconds before requesting a new password reset link.`,
+          waitSeconds
+        });
+      }
+    }
+
+    // Generate cryptographically secure 32-byte token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash the token with SHA-256 for secure database storage
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+    const now = new Date();
+
+    // Persist token and timestamps to user document
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          resetPasswordToken: hashedToken,
+          resetPasswordExpires: resetExpires,
+          resetPasswordLastRequestedAt: now
+        }
+      },
+      { runValidators: false }
+    );
+
+    // Build the frontend reset password URL
+    const frontendBaseUrl = (
+      process.env.FRONTEND_URL ||
+      process.env.CLIENT_URL ||
+      req.headers.origin ||
+      'https://nutrigenie.vercel.app'
+    ).replace(/\/$/, '');
+
+    const resetUrl = `${frontendBaseUrl}/reset-password?token=${rawToken}`;
+
+    // Send the password reset email via Brevo
+    try {
+      const emailResult = await emailService.sendPasswordResetEmail(user.email, user.name, resetUrl);
+      if (!emailResult.success) {
+        console.error(`[AUTH forgot-password] Brevo delivery failure for ${user.email}:`, {
+          code: emailResult.code,
+          error: emailResult.error
+        });
+      }
+    } catch (emailErr) {
+      console.error(`[AUTH forgot-password] Exception sending reset email to ${user.email}:`, emailErr);
+    }
+
+    return res.status(200).json(genericResponse);
+  } catch (error) {
+    console.error('[AUTH forgot-password] Global handler caught error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error occurred while processing password reset request.'
+    });
+  }
+};
+
+// @desc    Validate token and reset password
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Password reset token is required.'
+      });
+    }
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    // Hash incoming raw token with SHA-256 to compare against database
+    const hashedToken = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    // Find user with matching, non-expired token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password reset token is invalid or has expired. Please request a new link.'
+      });
+    }
+
+    // Hash the new password using bcrypt (matching existing User model genSalt(10))
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and invalidate the token immediately (single-use)
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          password: hashedPassword,
+          resetPasswordToken: null,
+          resetPasswordExpires: null
+        }
+      },
+      { runValidators: false }
+    );
+
+    console.log(`[AUTH reset-password] Password reset successful for user: ${user.email}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your password has been reset successfully! You can now log in with your new password.'
+    });
+  } catch (error) {
+    console.error('[AUTH reset-password] Global handler caught error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error occurred while resetting password.'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -360,5 +524,7 @@ module.exports = {
   sendOtp,
   verifyOtp,
   verifyEmail,
-  resendVerificationCode
+  resendVerificationCode,
+  forgotPassword,
+  resetPassword
 };

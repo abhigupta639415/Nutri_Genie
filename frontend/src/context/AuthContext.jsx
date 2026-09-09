@@ -159,6 +159,21 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
+  // Requests a password reset link to be sent via email
+  const forgotPassword = async (email) => {
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/forgot-password`, { email });
+    return response.data;
+  };
+
+  // Resets password using the received token
+  const resetPassword = async (token, newPassword) => {
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/reset-password`, {
+      token,
+      newPassword
+    });
+    return response.data;
+  };
+
   // Aliases for backward compatibility
   const verifyEmail = verifyOtp;
   const resendVerificationCode = sendOtp;
@@ -187,6 +202,8 @@ export const AuthProvider = ({ children }) => {
     verifyOtp,
     verifyEmail,
     resendVerificationCode,
+    forgotPassword,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

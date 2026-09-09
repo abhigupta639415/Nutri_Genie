@@ -1,48 +1,61 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Mail, Lock, AlertCircle, Sparkles, Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { KeyRound, Mail, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button, Card } from '../components/ui';
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
+const COOLDOWN_SECONDS = 60;
+
+const ForgotPassword = () => {
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [cooldown, setCooldown] = useState(0);
 
-  const successMessage = location.state?.resetSuccessMessage || '';
+  const { forgotPassword } = useAuth();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    if (error) setError('');
-  };
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !email.trim()) {
+      setError('Please provide a valid email address.');
+      return;
+    }
+
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown} seconds before submitting another request.`);
+      return;
+    }
+
     setError('');
     setLoading(true);
 
     try {
-      await login(formData);
-      navigate('/dashboard');
+      const res = await forgotPassword(email.trim());
+      // Show generic security best practice message
+      setSuccessMessage(
+        res?.message || 'If this email exists, a reset link has been sent.'
+      );
+      setCooldown(COOLDOWN_SECONDS);
     } catch (err) {
-      if (err.response?.data?.needsVerification) {
-        navigate('/verify-email', {
-          state: { email: err.response.data.email || formData.email },
-        });
-        return;
+      if (err.response?.status === 429) {
+        const wait = err.response.data?.waitSeconds || 60;
+        setCooldown(wait);
+        setError(err.response.data?.message || `Please wait ${wait} seconds before requesting another reset link.`);
+      } else {
+        // Even on unexpected error, avoid leaking user info
+        setError(err.response?.data?.message || 'Unable to process request right now. Please try again later.');
       }
-      setError(err.response?.data?.message || 'Login failed. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
@@ -57,30 +70,35 @@ const Login = () => {
         className="max-w-md w-full"
       >
         <Card className="p-8 sm:p-10 shadow-2xl border-slate-200/80 dark:border-white/10">
-          {/* Logo & Header */}
+          {/* Logo / Header Icon */}
           <div className="text-center mb-8 space-y-2">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/25 text-white mb-4">
-              <Sparkles className="w-7 h-7 animate-pulse" />
+              <KeyRound className="w-7 h-7" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-              Welcome Back
+              Forgot Password?
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Sign in to continue your personalized health journey
+              Enter your registered email address and we'll send you a link to reset your password.
             </p>
           </div>
 
-          {/* Success Banner from Reset Password */}
-          {successMessage && !error && (
+          {/* Success Banner */}
+          {successMessage && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3"
             >
               <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 leading-snug">
-                {successMessage}
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 leading-snug">
+                  {successMessage}
+                </p>
+                <p className="text-xs text-emerald-600/90 dark:text-emerald-400/90 leading-relaxed">
+                  Be sure to check your inbox and spam/junk folder. The reset link expires in 1 hour.
+                </p>
+              </div>
             </motion.div>
           )}
 
@@ -110,8 +128,11 @@ const Login = () => {
                 <input
                   type="email"
                   name="email"
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
                   required
                   placeholder="name@example.com"
                   className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all font-medium"
@@ -119,63 +140,28 @@ const Login = () => {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-11 py-3 text-sm rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all font-medium"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
             <Button
               type="submit"
               variant="primary"
               size="lg"
+              disabled={loading || cooldown > 0}
               isLoading={loading}
               rightIcon={ArrowRight}
               className="w-full justify-center text-sm font-bold shadow-lg shadow-cyan-500/25 mt-2"
             >
-              Sign In to Dashboard
+              {cooldown > 0 ? `Resend Link in ${cooldown}s` : 'Send Reset Link'}
             </Button>
           </form>
 
-          {/* Footer link */}
+          {/* Back to Login Link */}
           <div className="mt-8 pt-6 border-t border-slate-200/80 dark:border-white/10 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Don't have an account?{' '}
-              <Link
-                to="/register"
-                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
-              >
-                Create one now →
-              </Link>
-            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Login
+            </Link>
           </div>
         </Card>
       </motion.div>
@@ -183,4 +169,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

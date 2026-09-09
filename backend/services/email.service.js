@@ -575,9 +575,237 @@ async function sendLoginEmail(userEmail, userName, loginDetails = {}) {
     return await sendEmail(userEmail, subject, text, html);
 }
 
+async function sendPasswordResetEmail(userEmail, userName, resetUrl) {
+    const subject = 'Reset Your NutriGenie Password 🔑';
+
+    const text = `Hello ${userName},
+
+We received a request to reset your NutriGenie account password.
+
+To set a new password, please visit the link below:
+${resetUrl}
+
+This link is valid for 1 hour. If you did not make this request, you can safely ignore this email and your password will remain unchanged.
+
+Best regards,
+The NutriGenie Team`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Password - NutriGenie</title>
+</head>
+<body style="
+    margin:0;
+    padding:0;
+    background-color:#f4f6f8;
+    font-family:'Segoe UI', Arial, sans-serif;
+">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:40px 15px;">
+        <tr>
+            <td align="center">
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="
+                    max-width:600px;
+                    width:100%;
+                    background:#ffffff;
+                    border-radius:12px;
+                    overflow:hidden;
+                    box-shadow:0 8px 24px rgba(79,70,229,0.12);
+                ">
+                    <!-- Header -->
+                    <tr>
+                        <td style="
+                            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                            padding:44px 40px;
+                            text-align:center;
+                        ">
+                            <div style="
+                                width:64px;
+                                height:64px;
+                                background:rgba(255,255,255,0.15);
+                                border-radius:50%;
+                                margin:0 auto 16px;
+                                line-height:64px;
+                                font-size:30px;
+                            ">
+                                🔑
+                            </div>
+                            <h1 style="
+                                margin:0;
+                                color:#ffffff;
+                                font-size:28px;
+                                font-weight:700;
+                            ">
+                                Reset Your Password
+                            </h1>
+                            <p style="
+                                margin:10px 0 0;
+                                color:rgba(255,255,255,0.9);
+                                font-size:15px;
+                            ">
+                                We received a request to change your password
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+                            <h2 style="
+                                margin:0 0 16px;
+                                color:#1f2937;
+                                font-size:22px;
+                                font-weight:600;
+                            ">
+                                Hello ${userName} 👋
+                            </h2>
+
+                            <p style="
+                                margin:0 0 16px;
+                                color:#4b5563;
+                                font-size:16px;
+                                line-height:1.7;
+                            ">
+                                We received a request to reset your password for your
+                                <strong style="color:#4f46e5;">NutriGenie</strong> account.
+                            </p>
+
+                            <p style="
+                                margin:0 0 28px;
+                                color:#4b5563;
+                                font-size:16px;
+                                line-height:1.7;
+                            ">
+                                Click the button below to choose a new password. This reset link is valid for <strong>1 hour</strong>.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 30px;">
+                                <tr>
+                                    <td align="center" style="
+                                        border-radius:8px;
+                                        background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                                        box-shadow:0 4px 14px rgba(79,70,229,0.35);
+                                    ">
+                                        <a href="${resetUrl}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           style="
+                                            display:inline-block;
+                                            padding:15px 36px;
+                                            font-size:16px;
+                                            color:#ffffff;
+                                            text-decoration:none;
+                                            font-weight:700;
+                                            letter-spacing:0.3px;
+                                            border-radius:8px;
+                                           ">
+                                            Reset Password →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Fallback URL -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
+                                background:#f9fafb;
+                                border:1px solid #e5e7eb;
+                                border-radius:8px;
+                                margin:0 0 24px;
+                            ">
+                                <tr>
+                                    <td style="padding:14px 16px;">
+                                        <p style="
+                                            margin:0 0 6px;
+                                            color:#6b7280;
+                                            font-size:12px;
+                                            font-weight:600;
+                                            text-transform:uppercase;
+                                            letter-spacing:0.5px;
+                                        ">
+                                            Or copy & paste this link in your browser:
+                                        </p>
+                                        <p style="
+                                            margin:0;
+                                            color:#4f46e5;
+                                            font-size:13px;
+                                            word-break:break-all;
+                                            line-height:1.4;
+                                        ">
+                                            <a href="${resetUrl}" style="color:#4f46e5; text-decoration:underline;">${resetUrl}</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Security Notice -->
+                            <p style="
+                                margin:24px 0 0;
+                                padding:14px 16px;
+                                background:#fff7ed;
+                                border-radius:8px;
+                                color:#9a3412;
+                                font-size:14px;
+                                line-height:1.5;
+                            ">
+                                🔒 <strong>Didn't request this?</strong>
+                                If you did not ask for a password reset, you can safely ignore this email. Your current password will remain unchanged and your account is completely secure.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="
+                            background:#f9fafb;
+                            border-top:1px solid #e5e7eb;
+                            padding:24px 40px;
+                            text-align:center;
+                        ">
+                            <p style="
+                                margin:0 0 8px;
+                                color:#374151;
+                                font-size:14px;
+                                font-weight:600;
+                            ">
+                                The NutriGenie Team 💜
+                            </p>
+                            <p style="
+                                margin:0;
+                                color:#9ca3af;
+                                font-size:12px;
+                                line-height:1.5;
+                            ">
+                                This is an automated email. Please do not reply to this message.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+`;
+
+    console.log(`🔑 [PASSWORD RESET] Reset link generated for ${userEmail}: ${resetUrl}`);
+    return await sendEmail(userEmail, subject, text, html);
+}
+
 // Alias sendOTPEmail to sendverificationEmail
 async function sendOTPEmail(userEmail, userName, otp) {
     return await sendverificationEmail(userEmail, userName, otp);
 }
 
-module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail, sendOTPEmail, sendEmail };
+module.exports = {
+    sendRegisterationEmail,
+    sendLoginEmail,
+    sendverificationEmail,
+    sendOTPEmail,
+    sendPasswordResetEmail,
+    sendEmail
+};
