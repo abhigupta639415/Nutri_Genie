@@ -240,8 +240,7 @@ const verifyOtp = async (req, res) => {
     await user.save();
 
     // Welcome email (fire-and-forget)
-    emailService.sendRegisterationEmail(user.email, user.name)
-      .catch((error) => console.error('Welcome email failed:', error));
+
 
     res.json({
       success: true,
