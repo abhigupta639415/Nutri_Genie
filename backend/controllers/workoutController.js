@@ -1,24 +1,94 @@
-const { generateWorkoutPlan } = require('../utils/exerciseGenerator');
+const { generateWorkoutPlan, generateMultiWeekWorkoutPlan, getDifficultyLevel, normalizeGoal } = require('../utils/exerciseGenerator');
 const Progress = require('../models/Progress');
 const User = require('../models/User');
+const GeminiDietPlan = require('../models/GeminiDietPlan');
+const WorkoutPlan = require('../models/WorkoutPlan');
 
-// @desc    Get personalized workout plan
+// @desc    Get personalized multi-week workout plan synced with diet plan duration & calendar Sundays
 // @route   GET /api/workout/plan
 // @access  Private
 const getWorkoutPlan = async (req, res) => {
   try {
-    const { goal, activityLevel } = req.user;
-    const { location } = req.query;
+    const userGoal = req.user.goal;
+    const userActivity = req.user.activityLevel;
+    const { goal, level, weeks, days, forceRegen } = req.query;
 
-    const workoutPlan = generateWorkoutPlan(goal, activityLevel, location || 'home');
-    
+    // Check if active GeminiDietPlan exists to sync plan duration and start date
+    const activeDietPlan = await GeminiDietPlan.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+
+    const durationWeeks = Number(weeks) || activeDietPlan?.planDurationWeeks || req.user.planDurationWeeks || 4;
+    const durationDays = Number(days) || activeDietPlan?.planDurationDays || req.user.planDurationDays || (durationWeeks * 7);
+    const startDate = activeDietPlan?.startDate || req.user.planStartDate || req.user.createdAt || new Date();
+
+    const selectedGoal = normalizeGoal(goal || (userGoal === 'weight_loss' ? 'fatLoss' : userGoal === 'muscle_gain' || userGoal === 'weight_gain' ? 'muscleGain' : 'stayFit'));
+    const selectedLevel = getDifficultyLevel(level || userActivity);
+
+    // Look for existing saved WorkoutPlan or generate new
+    let workoutPlanDoc = null;
+    if (forceRegen !== 'true') {
+      workoutPlanDoc = await WorkoutPlan.findOne({
+        userId: req.user._id,
+        goal: selectedGoal,
+        level: selectedLevel,
+        planDurationDays: durationDays
+      });
+
+      // If existing plan's start date is significantly different from anchor, regenerate to keep calendar Sundays accurate
+      if (workoutPlanDoc && workoutPlanDoc.startDate) {
+        const planStart = new Date(workoutPlanDoc.startDate);
+        const anchorStart = new Date(startDate);
+        planStart.setHours(0, 0, 0, 0);
+        anchorStart.setHours(0, 0, 0, 0);
+        if (planStart.getTime() !== anchorStart.getTime()) {
+          workoutPlanDoc = null;
+        }
+      }
+    }
+
+    if (!workoutPlanDoc) {
+      const generated = generateMultiWeekWorkoutPlan({
+        goal: selectedGoal,
+        level: selectedLevel,
+        durationWeeks,
+        durationDays,
+        startDate
+      });
+
+      workoutPlanDoc = await WorkoutPlan.findOneAndUpdate(
+        {
+          userId: req.user._id,
+          goal: selectedGoal,
+          level: selectedLevel,
+          planDurationDays: durationDays
+        },
+        {
+          userId: req.user._id,
+          goal: selectedGoal,
+          level: selectedLevel,
+          planDurationWeeks: generated.planDurationWeeks,
+          planDurationDays: generated.planDurationDays,
+          startDate: generated.startDate,
+          days: generated.days
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
     res.json({
-      plan: workoutPlan,
-      guidelines: getWorkoutGuidelines(goal),
+      success: true,
+      plan: workoutPlanDoc,
+      days: workoutPlanDoc.days,
+      planDurationWeeks: workoutPlanDoc.planDurationWeeks,
+      planDurationDays: workoutPlanDoc.planDurationDays,
+      startDate: workoutPlanDoc.startDate,
+      goal: workoutPlanDoc.goal,
+      level: workoutPlanDoc.level,
+      guidelines: getWorkoutGuidelines(userGoal),
       safetyTips: getSafetyTips()
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error in getWorkoutPlan:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -129,12 +199,16 @@ const toggleWorkout = async (req, res) => {
   }
 };
 
-// @desc    Get current 7-day workout cycle completion status based on user registration / plan start date
+// @desc    Get multi-week workout cycle completion status based on user plan anchor date
 // @route   GET /api/workout/week-status
 // @access  Private
 const getWorkoutWeekStatus = async (req, res) => {
   try {
-    const userStartDate = req.user.planStartDate || req.user.createdAt || new Date();
+    const activeDietPlan = await GeminiDietPlan.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+    const userStartDate = activeDietPlan?.startDate || req.user.planStartDate || req.user.createdAt || new Date();
+    const durationWeeks = activeDietPlan?.planDurationWeeks || req.user.planDurationWeeks || 4;
+    const durationDays = activeDietPlan?.planDurationDays || req.user.planDurationDays || (durationWeeks * 7);
+
     const anchor = new Date(userStartDate);
     anchor.setHours(0, 0, 0, 0);
 
@@ -144,9 +218,18 @@ const getWorkoutWeekStatus = async (req, res) => {
 
     // Calculate elapsed calendar days from anchor to today
     const totalDiffDays = Math.floor((today.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
-    // Determine active 7-day cycle window (Cycle 1: days 0..6, Cycle 2: days 7..13, etc.)
-    const cycleOffset = totalDiffDays >= 0 ? Math.floor(totalDiffDays / 7) * 7 : 0;
 
+    // Determine current absolute day number (1..durationDays) and current week (1..durationWeeks)
+    const currentDayNum = Math.max(1, Math.min(durationDays, totalDiffDays + 1));
+    const currentWeekNum = Math.min(durationWeeks, Math.floor((currentDayNum - 1) / 7) + 1);
+
+    // Multi-week plan bounds
+    const planEnd = new Date(anchor);
+    planEnd.setDate(anchor.getDate() + durationDays);
+    planEnd.setHours(23, 59, 59, 999);
+
+    // Cycle bounds for active 7-day window (backward compatibility)
+    const cycleOffset = totalDiffDays >= 0 ? Math.floor(totalDiffDays / 7) * 7 : 0;
     const cycleStart = new Date(anchor);
     cycleStart.setDate(anchor.getDate() + cycleOffset);
     cycleStart.setHours(0, 0, 0, 0);
@@ -157,30 +240,34 @@ const getWorkoutWeekStatus = async (req, res) => {
 
     const progressList = await Progress.find({
       userId: req.user._id,
-      date: { $gte: cycleStart, $lte: cycleEnd }
+      date: { $gte: anchor, $lte: planEnd }
     });
 
     const completedDays = {};
     progressList.forEach((p) => {
       if (p.workoutsCompleted && p.workoutsCompleted.length > 0) {
         p.workoutsCompleted.forEach((w) => {
-          if (w.day && w.day >= 1 && w.day <= 7) {
+          if (w.day && w.day >= 1 && w.day <= durationDays) {
             completedDays[w.day] = true;
           }
         });
       }
     });
 
-    const currentDayNum = Math.max(1, Math.min(7, (totalDiffDays % 7) + 1));
-
     res.json({
       success: true,
+      startDate: anchor,
+      planStartDate: anchor,
+      planDurationWeeks: durationWeeks,
+      planDurationDays: durationDays,
+      currentDayNumber: currentDayNum,
+      currentWeek: currentWeekNum,
+      completedDays,
+      // Backward compatibility fields
       weekStart: cycleStart,
       weekEnd: cycleEnd,
       cycleStart,
-      cycleEnd,
-      currentDayNumber: currentDayNum,
-      completedDays
+      cycleEnd
     });
   } catch (error) {
     console.error('Error in getWorkoutWeekStatus:', error);
@@ -195,6 +282,8 @@ const resetWorkoutCycle = async (req, res) => {
   try {
     const now = new Date();
     await User.findByIdAndUpdate(req.user._id, { planStartDate: now });
+    // Also clear cached WorkoutPlan so that calendar Sundays and day sequences recalculate from today
+    await WorkoutPlan.deleteMany({ userId: req.user._id });
     res.json({
       success: true,
       message: 'Workout cycle reset to Day 1 starting today.',
@@ -211,7 +300,7 @@ const getWorkoutGuidelines = (goal) => {
   const guidelines = {
     weight_loss: {
       frequency: '5-6 days per week',
-      focus: 'Cardio and HIIT',
+      focus: 'Cardio and HIIT with Sunday active recovery',
       duration: '30-45 minutes per session',
       intensity: 'Moderate to high'
     },
@@ -229,7 +318,7 @@ const getWorkoutGuidelines = (goal) => {
     },
     maintenance: {
       frequency: '3-5 days per week',
-      focus: 'Mixed cardio and strength',
+      focus: 'Mixed cardio, strength, and mobility',
       duration: '30-45 minutes per session',
       intensity: 'Moderate'
     }
@@ -243,7 +332,7 @@ const getSafetyTips = () => {
   return [
     'Always warm up for 5-10 minutes before exercising',
     'Stay hydrated throughout your workout',
-    'Listen to your body and rest when needed',
+    'Listen to your body and honor Sunday recovery days',
     'Use proper form to prevent injuries',
     'Cool down and stretch after workouts',
     'Consult a doctor before starting any new exercise program'
