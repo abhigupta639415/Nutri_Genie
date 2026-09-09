@@ -57,7 +57,11 @@ const Register = () => {
     try {
       const result = await register(data);
       navigate('/verify-email', {
-        state: { email: result?.email || data.email },
+        state: {
+          email: result?.email || data.email,
+          devVerificationCode: result?.devVerificationCode,
+          emailWarning: result?.emailWarning,
+        },
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please check your inputs.');

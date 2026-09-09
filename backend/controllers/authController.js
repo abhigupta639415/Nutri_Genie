@@ -31,6 +31,8 @@ const register = async (req, res) => {
 
     const verificationCode = generateVerificationCode();
 
+    const now = new Date();
+
     // Create user (unverified — no token is issued until they confirm their email)
     const user = await User.create({
       name,
@@ -39,26 +41,42 @@ const register = async (req, res) => {
       age,
       gender,
       weight,
+      initialWeight: weight,
       height,
       goal,
       activityLevel,
       dietaryPreference,
+      planStartDate: now,
       verificationToken: verificationCode,
       verificationTokenExpires: Date.now() + VERIFICATION_CODE_TTL_MS
     });
 
     if (user) {
-      res.status(201).json({
-        message: 'Registration successful. Please check your email for a verification code.',
-        email: user.email
-      });
+      const emailResult = await emailService.sendverificationEmail(user.email, user.name, verificationCode);
 
-      // Send the code by email. Fire-and-forget so a slow mail server
-      // doesn't hold up the response; failures are logged, not thrown.
-      emailService.sendverificationEmail(user.email, user.name, verificationCode)
-        .catch((error) => {
-          console.error('Verification email failed:', error);
-        });
+      let message = 'Registration successful. Please check your email for a verification code.';
+      let emailWarning = null;
+
+      if (!emailResult.success) {
+        console.warn(`[AUTH] Verification email could not be delivered to ${user.email}:`, emailResult.error);
+        if (emailResult.code === 'RESEND_FREE_TIER_DOMAIN_RESTRICTION') {
+          emailWarning = 'Resend free tier restriction: Emails can only be delivered to the Resend account owner. The verification code has been logged to the server console.';
+        } else if (emailResult.code === 'MISSING_API_KEY') {
+          emailWarning = 'RESEND_API_KEY is not configured. The verification code has been logged to the server console.';
+        } else {
+          emailWarning = `Email delivery warning: ${emailResult.error}`;
+        }
+      }
+
+      const exposeCode = !emailResult.success || process.env.NODE_ENV !== 'production' || process.env.EXPOSE_VERIFY_CODE === 'true';
+
+      res.status(201).json({
+        message,
+        email: user.email,
+        emailSent: emailResult.success,
+        emailWarning,
+        devVerificationCode: exposeCode ? verificationCode : undefined
+      });
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -136,9 +154,30 @@ const resendVerificationCode = async (req, res) => {
     user.verificationTokenExpires = Date.now() + VERIFICATION_CODE_TTL_MS;
     await user.save();
 
-    await emailService.sendverificationEmail(user.email, user.name, verificationCode);
+    const emailResult = await emailService.sendverificationEmail(user.email, user.name, verificationCode);
 
-    res.json({ message: 'A new verification code has been sent to your email.' });
+    let message = 'A new verification code has been sent to your email.';
+    let emailWarning = null;
+
+    if (!emailResult.success) {
+      console.warn(`[AUTH] Resend verification email failed for ${user.email}:`, emailResult.error);
+      if (emailResult.code === 'RESEND_FREE_TIER_DOMAIN_RESTRICTION') {
+        emailWarning = 'Resend free tier restriction: Test emails can only be sent to the Resend account owner. The verification code has been logged to the server console.';
+      } else if (emailResult.code === 'MISSING_API_KEY') {
+        emailWarning = 'RESEND_API_KEY is not configured. The verification code has been logged to the server console.';
+      } else {
+        emailWarning = `Email delivery warning: ${emailResult.error}`;
+      }
+    }
+
+    const exposeCode = !emailResult.success || process.env.NODE_ENV !== 'production' || process.env.EXPOSE_VERIFY_CODE === 'true';
+
+    res.json({
+      message,
+      emailSent: emailResult.success,
+      emailWarning,
+      devVerificationCode: exposeCode ? verificationCode : undefined
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -212,7 +251,12 @@ const updateProfile = async (req, res) => {
     if (user) {
       user.name = req.body.name || user.name;
       user.age = req.body.age || user.age;
-      user.weight = req.body.weight || user.weight;
+      if (req.body.weight !== undefined) {
+        if (!user.initialWeight) {
+          user.initialWeight = user.weight || req.body.weight;
+        }
+        user.weight = req.body.weight;
+      }
       user.height = req.body.height || user.height;
       user.goal = req.body.goal || user.goal;
       user.activityLevel = req.body.activityLevel || user.activityLevel;

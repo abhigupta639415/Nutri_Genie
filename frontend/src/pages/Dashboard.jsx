@@ -101,7 +101,19 @@ const Dashboard = () => {
     setSavingWeight(true);
     setWeightError('');
     try {
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Log to Progress collection in MongoDB so today's entry and weight trajectory are updated
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/progress`,
+        { weight: val },
+        { headers: authHeaders }
+      );
+
+      // Sync user profile weight
       await updateProfile({ weight: val });
+
       const userId = user?._id || user?.id;
       if (userId) {
         localStorage.setItem(`nutrigenie_weight_last_updated_${userId}`, new Date().toISOString());
@@ -146,9 +158,12 @@ const Dashboard = () => {
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [dietResponse, progressResponse] = await Promise.all([
-        axios.get(`${process.env.REACT_APP_API_URL}/api/diet/plan`),
-        axios.get(`${process.env.REACT_APP_API_URL}/api/progress/summary?period=week`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/diet/plan`, { headers: authHeaders }),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/progress/summary?period=week`, { headers: authHeaders }),
       ]);
 
       setStats({

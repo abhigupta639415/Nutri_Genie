@@ -129,6 +129,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     min: 20
   },
+  initialWeight: {
+    type: Number,
+    min: 20
+  },
   height: {
     type: Number,
     required: true,
@@ -197,7 +201,7 @@ const userSchema = new mongoose.Schema({
   },
   planStartDate: {
     type: Date,
-    default: null
+    default: Date.now
   }
 
 }, {

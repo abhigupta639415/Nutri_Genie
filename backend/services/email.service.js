@@ -3,21 +3,47 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Function to send email
 const sendEmail = async (to, subject, text, html) => {
+  if (!process.env.RESEND_API_KEY) {
+    const errorMsg = 'RESEND_API_KEY is not configured in environment variables.';
+    console.warn(`[EMAIL SERVICE] ${errorMsg}`);
+    return { success: false, error: errorMsg, code: 'MISSING_API_KEY' };
+  }
+
   try {
     const { data, error } = await resend.emails.send({
-      from: 'NutriGenie <onboarding@resend.dev>',
+      from: process.env.EMAIL_FROM || 'NutriGenie <onboarding@resend.dev>',
       to,
       subject,
       text,
       html,
     });
+
     if (error) {
-      console.error('Error sending email:', error);
-    } else {
-      console.log('Message sent:', data.id);
+      console.error('[EMAIL SERVICE] Resend delivery error:', error);
+      const isDomainRestriction = error.statusCode === 403 ||
+        (typeof error.message === 'string' && (
+          error.message.toLowerCase().includes('testing emails to your own email address') ||
+          error.message.toLowerCase().includes('verify a domain')
+        ));
+
+      return {
+        success: false,
+        error: error.message || 'Failed to deliver email via Resend',
+        code: isDomainRestriction ? 'RESEND_FREE_TIER_DOMAIN_RESTRICTION' : 'RESEND_ERROR',
+        details: error,
+      };
     }
+
+    console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${data?.id})`);
+    return { success: true, data };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[EMAIL SERVICE] Unexpected error sending email:', error);
+    return {
+      success: false,
+      error: error.message || 'Unexpected email delivery exception',
+      code: 'EMAIL_EXCEPTION',
+      details: error,
+    };
   }
 };
 
@@ -250,7 +276,10 @@ The NutriGenie Team`;
 </html>
 `;
 
-    await sendEmail(userEmail, subject, text, html);
+    // Always log verification code to server console so developers/admins can retrieve it immediately from Render/terminal logs
+    console.log(`🔑 [VERIFICATION CODE] Code for ${userEmail}: ${verificationCode}`);
+
+    return await sendEmail(userEmail, subject, text, html);
 }
 
 
@@ -340,7 +369,7 @@ async function sendRegisterationEmail(userEmail, userName) {
     </div>
     `;
 
-    await sendEmail(userEmail, subject, text, html);
+    return await sendEmail(userEmail, subject, text, html);
 }
 
 
@@ -462,7 +491,7 @@ async function sendLoginEmail(userEmail, userName, loginDetails = {}) {
     </div>
     `;
 
-    await sendEmail(userEmail, subject, text, html);
+    return await sendEmail(userEmail, subject, text, html);
 }
 
 module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail };

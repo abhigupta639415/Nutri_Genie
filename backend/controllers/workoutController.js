@@ -129,26 +129,35 @@ const toggleWorkout = async (req, res) => {
   }
 };
 
-// @desc    Get current week's workout completion status
+// @desc    Get current 7-day workout cycle completion status based on user registration / plan start date
 // @route   GET /api/workout/week-status
 // @access  Private
 const getWorkoutWeekStatus = async (req, res) => {
   try {
+    const userStartDate = req.user.planStartDate || req.user.createdAt || new Date();
+    const anchor = new Date(userStartDate);
+    anchor.setHours(0, 0, 0, 0);
+
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const currentIsoDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
 
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (currentIsoDay - 1));
-    monday.setHours(0, 0, 0, 0);
+    // Calculate elapsed calendar days from anchor to today
+    const totalDiffDays = Math.floor((today.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
+    // Determine active 7-day cycle window (Cycle 1: days 0..6, Cycle 2: days 7..13, etc.)
+    const cycleOffset = totalDiffDays >= 0 ? Math.floor(totalDiffDays / 7) * 7 : 0;
 
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+    const cycleStart = new Date(anchor);
+    cycleStart.setDate(anchor.getDate() + cycleOffset);
+    cycleStart.setHours(0, 0, 0, 0);
+
+    const cycleEnd = new Date(cycleStart);
+    cycleEnd.setDate(cycleStart.getDate() + 6);
+    cycleEnd.setHours(23, 59, 59, 999);
 
     const progressList = await Progress.find({
       userId: req.user._id,
-      date: { $gte: monday, $lte: sunday }
+      date: { $gte: cycleStart, $lte: cycleEnd }
     });
 
     const completedDays = {};
@@ -159,21 +168,40 @@ const getWorkoutWeekStatus = async (req, res) => {
             completedDays[w.day] = true;
           }
         });
-        const pDate = new Date(p.date);
-        const pDayOfWeek = pDate.getDay();
-        const isoDay = pDayOfWeek === 0 ? 7 : pDayOfWeek;
-        completedDays[isoDay] = true;
       }
     });
 
+    const currentDayNum = Math.max(1, Math.min(7, (totalDiffDays % 7) + 1));
+
     res.json({
       success: true,
-      weekStart: monday,
-      weekEnd: sunday,
+      weekStart: cycleStart,
+      weekEnd: cycleEnd,
+      cycleStart,
+      cycleEnd,
+      currentDayNumber: currentDayNum,
       completedDays
     });
   } catch (error) {
     console.error('Error in getWorkoutWeekStatus:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Reset user workout cycle to Day 1 starting today
+// @route   POST /api/workout/reset
+// @access  Private
+const resetWorkoutCycle = async (req, res) => {
+  try {
+    const now = new Date();
+    await User.findByIdAndUpdate(req.user._id, { planStartDate: now });
+    res.json({
+      success: true,
+      message: 'Workout cycle reset to Day 1 starting today.',
+      planStartDate: now
+    });
+  } catch (error) {
+    console.error('Error in resetWorkoutCycle:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -225,5 +253,6 @@ const getSafetyTips = () => {
 module.exports = {
   getWorkoutPlan,
   toggleWorkout,
-  getWorkoutWeekStatus
+  getWorkoutWeekStatus,
+  resetWorkoutCycle
 };

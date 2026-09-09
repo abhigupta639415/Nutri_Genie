@@ -19,15 +19,18 @@ import {
 import { fatLossWorkouts } from '../data/fatLossWorkouts';
 import { muscleGainWorkouts } from '../data/muscleGainWorkouts';
 import { stayFitWorkouts } from '../data/stayFitWorkouts';
+import { useAuth } from '../context/AuthContext';
 import { Button, Card, Badge, AnimatedCounter } from '../components/ui';
 import { PageContainer } from '../components/PageContainer';
 
 const Workout = () => {
+  const { user } = useAuth();
   const [selectedGoal, setSelectedGoal] = useState('fatLoss');
   const [selectedLevel, setSelectedLevel] = useState('beginner');
   const [workoutPlan, setWorkoutPlan] = useState([]);
   const [completedDays, setCompletedDays] = useState({});
   const [planKey, setPlanKey] = useState(0);
+  const [serverCycleStart, setServerCycleStart] = useState(null);
 
   const allWorkouts = {
     fatLoss: fatLossWorkouts,
@@ -65,16 +68,34 @@ const Workout = () => {
 
   const [togglingDay, setTogglingDay] = useState(null);
 
-  const getDayInfo = useCallback((dayNum) => {
-    // Current week: Monday is Day 1, Sunday is Day 7
+  const getCycleStartDate = useCallback(() => {
+    if (serverCycleStart) {
+      const s = new Date(serverCycleStart);
+      s.setHours(0, 0, 0, 0);
+      return s;
+    }
+    const raw = user?.planStartDate || user?.createdAt;
+    const d = raw ? new Date(raw) : new Date();
+    d.setHours(0, 0, 0, 0);
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dayOfWeek = today.getDay(); // 0 is Sun, 1 is Mon, ..., 6 is Sat
-    const todayIso = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const elapsed = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    const offset = elapsed >= 0 ? Math.floor(elapsed / 7) * 7 : 0;
+    d.setDate(d.getDate() + offset);
+    return d;
+  }, [serverCycleStart, user?.planStartDate, user?.createdAt]);
 
-    const diffDays = dayNum - todayIso;
-    const date = new Date(today);
-    date.setDate(today.getDate() + diffDays);
+  const getDayInfo = useCallback((dayNum) => {
+    const cycleStart = getCycleStartDate();
+    const date = new Date(cycleStart);
+    date.setDate(cycleStart.getDate() + (dayNum - 1));
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     let status = 'past';
     if (diffDays === 0) status = 'today';
@@ -95,18 +116,14 @@ const Workout = () => {
       dateString: date.toISOString(),
       formattedDate,
     };
-  }, []);
+  }, [getCycleStartDate]);
 
   const getWeekStorageKey = useCallback(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dayOfWeek = today.getDay();
-    const todayIso = dayOfWeek === 0 ? 7 : dayOfWeek;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (todayIso - 1));
-    const mondayStr = monday.toISOString().split('T')[0];
-    return `workout_${selectedGoal}_${selectedLevel}_week_${mondayStr}_${planKey}`;
-  }, [selectedGoal, selectedLevel, planKey]);
+    const cycleStart = getCycleStartDate();
+    const cycleStartStr = cycleStart.toISOString().split('T')[0];
+    const userId = user?._id || user?.id || 'guest';
+    return `workout_${userId}_${selectedGoal}_${selectedLevel}_cycle_${cycleStartStr}_${planKey}`;
+  }, [getCycleStartDate, user?._id, user?.id, selectedGoal, selectedLevel, planKey]);
 
   const loadCompletedDays = useCallback(() => {
     const storageKey = getWeekStorageKey();
@@ -128,7 +145,12 @@ const Workout = () => {
   useEffect(() => {
     const syncWeekStatus = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/workout/week-status`);
+        const token = localStorage.getItem('token');
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/workout/week-status`, { headers: authHeaders });
+        if (res.data?.cycleStart) {
+          setServerCycleStart(res.data.cycleStart);
+        }
         if (res.data?.completedDays) {
           setCompletedDays((prev) => {
             const merged = { ...prev, ...res.data.completedDays };
@@ -177,17 +199,23 @@ const Workout = () => {
     };
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/workout/toggle`, {
-        day: dayNum,
-        date: dayInfo.dateString,
-        completed: newCompleted,
-        workout: {
-          name: workout.name,
-          type: workout.type,
-          duration: workout.duration || '40 min',
-          caloriesBurned: workout.caloriesBurned || 280,
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/workout/toggle`,
+        {
+          day: dayNum,
+          date: dayInfo.dateString,
+          completed: newCompleted,
+          workout: {
+            name: workout.name,
+            type: workout.type,
+            duration: workout.duration || '40 min',
+            caloriesBurned: workout.caloriesBurned || 280,
+          },
         },
-      });
+        { headers: authHeaders }
+      );
     } catch (err) {
       console.error('Failed to sync workout toggle with backend:', err);
       // Rollback on server error
@@ -204,13 +232,28 @@ const Workout = () => {
     }
   };
 
-  const regeneratePlan = () => {
+  const regeneratePlan = async () => {
     setPlanKey((prev) => prev + 1);
     setCompletedDays({});
     try {
       const storageKey = getWeekStorageKey();
       localStorage.removeItem(storageKey);
     } catch (e) {}
+
+    try {
+      const token = localStorage.getItem('token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/workout/reset`,
+        {},
+        { headers: authHeaders }
+      );
+      if (res.data?.planStartDate) {
+        setServerCycleStart(res.data.planStartDate);
+      }
+    } catch (err) {
+      console.warn('Could not reset workout cycle on backend:', err.message);
+    }
   };
 
   const getCompletedCount = () => {

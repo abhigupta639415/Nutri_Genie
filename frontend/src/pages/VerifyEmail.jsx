@@ -13,8 +13,12 @@ const VerifyEmail = () => {
   const { verifyEmail, resendVerificationCode } = useAuth();
 
   const emailFromState = location.state?.email || '';
+  const emailWarningFromState = location.state?.emailWarning || '';
+  const devCodeFromState = location.state?.devVerificationCode || '';
+
   const [email, setEmail] = useState(emailFromState);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(devCodeFromState);
+  const [warning, setWarning] = useState(emailWarningFromState);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,8 +57,10 @@ const VerifyEmail = () => {
     setResending(true);
 
     try {
-      await resendVerificationCode(email);
-      setInfo('A new 6-digit verification code has been dispatched to your email.');
+      const res = await resendVerificationCode(email);
+      setInfo(res?.message || 'A new 6-digit verification code has been dispatched to your email.');
+      if (res?.emailWarning) setWarning(res.emailWarning);
+      if (res?.devVerificationCode) setCode(res.devVerificationCode);
       setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not resend code. Please try again later.');
@@ -116,6 +122,20 @@ const VerifyEmail = () => {
               <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 leading-snug">
                 {info}
               </p>
+            </motion.div>
+          )}
+
+          {warning && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start text-left gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-xs font-medium text-amber-700 dark:text-amber-300 leading-snug space-y-1">
+                <p className="font-bold">Email Notice:</p>
+                <p>{warning}</p>
+              </div>
             </motion.div>
           )}
 

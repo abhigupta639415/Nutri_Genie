@@ -51,7 +51,11 @@ const logProgress = async (req, res) => {
 
     // Atomically update req.user's weight on the User document itself
     if (weight !== undefined && !isNaN(weight) && Number(weight) > 0) {
-      await User.findByIdAndUpdate(req.user._id, { weight: Number(weight) });
+      const updateFields = { weight: Number(weight) };
+      if (!req.user.initialWeight) {
+        updateFields.initialWeight = req.user.weight || Number(weight);
+      }
+      await User.findByIdAndUpdate(req.user._id, updateFields);
     }
 
     res.status(200).json(progress);
@@ -102,16 +106,20 @@ const getProgressSummary = async (req, res) => {
         days = 7;
     }
 
-    const startDate = new Date();
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+
+    const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
 
     const progressData = await Progress.find({
       userId: req.user._id,
-      date: { $gte: startDate }
+      date: { $gte: startDate, $lte: endDate }
     }).sort({ date: 1 });
 
     // Check if today already has an entry
-    const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(now);
@@ -121,6 +129,36 @@ const getProgressSummary = async (req, res) => {
       userId: req.user._id,
       date: { $gte: startOfDay, $lte: endOfDay }
     });
+
+    // Baseline weight queries for accurate weight shift calculation
+    const priorEntry = await Progress.findOne({
+      userId: req.user._id,
+      date: { $lt: startDate }
+    }).sort({ date: -1 });
+
+    const earliestEntry = await Progress.findOne({
+      userId: req.user._id
+    }).sort({ date: 1 });
+
+    let currentWeight = req.user?.weight || 0;
+    if (progressData.length > 0) {
+      currentWeight = progressData[progressData.length - 1].weight;
+    }
+
+    let startWeight = currentWeight;
+    if (priorEntry && typeof priorEntry.weight === 'number') {
+      startWeight = priorEntry.weight;
+    } else if (progressData.length > 1 && typeof progressData[0].weight === 'number') {
+      startWeight = progressData[0].weight;
+    } else if (req.user?.initialWeight && typeof req.user.initialWeight === 'number') {
+      startWeight = req.user.initialWeight;
+    } else if (earliestEntry && typeof earliestEntry.weight === 'number') {
+      startWeight = earliestEntry.weight;
+    } else if (req.user?.weight && typeof req.user.weight === 'number') {
+      startWeight = req.user.weight;
+    }
+
+    const weightChange = Number((currentWeight - startWeight).toFixed(1));
 
     // Calculate real diet adherence within active diet plan duration
     const plan = await GeminiDietPlan.findOne({
@@ -178,9 +216,9 @@ const getProgressSummary = async (req, res) => {
           totalDays: 0,
           averageCaloriesConsumed: 0,
           averageCaloriesBurned: 0,
-          weightChange: 0,
-          currentWeight: req.user?.weight || 0,
-          startWeight: req.user?.weight || 0,
+          weightChange,
+          currentWeight,
+          startWeight,
           averageWaterIntake: 0,
           averageSleepHours: 0,
           totalWorkouts: 0,
@@ -197,9 +235,9 @@ const getProgressSummary = async (req, res) => {
       totalDays: progressData.length,
       averageCaloriesConsumed: Math.round(progressData.reduce((sum, p) => sum + p.caloriesConsumed, 0) / progressData.length),
       averageCaloriesBurned: Math.round(progressData.reduce((sum, p) => sum + p.caloriesBurned, 0) / progressData.length),
-      weightChange: progressData[progressData.length - 1].weight - progressData[0].weight,
-      currentWeight: progressData[progressData.length - 1].weight,
-      startWeight: progressData[0].weight,
+      weightChange,
+      currentWeight,
+      startWeight,
       averageWaterIntake: Math.round(progressData.reduce((sum, p) => sum + (p.waterIntake || 0), 0) / progressData.length),
       averageSleepHours: Math.round((progressData.reduce((sum, p) => sum + (p.sleepHours || 0), 0) / progressData.length) * 10) / 10,
       totalWorkouts: progressData.reduce((sum, p) => sum + (p.workoutsCompleted?.length || 0), 0),
