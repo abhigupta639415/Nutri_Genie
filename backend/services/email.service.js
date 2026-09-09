@@ -1,13 +1,16 @@
 const nodemailer = require('nodemailer');
 
-// Factory function to create transporter with current environment credentials
+// Factory function to create transporter with current environment credentials forced over IPv4
 const createTransporter = () => {
   const user = (process.env.EMAIL_USER || '').trim();
   const pass = (process.env.EMAIL_PASS || '').replace(/[\s"']/g, '');
 
   return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass }
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+    family: 4 // Force IPv4 to prevent ENETUNREACH on Render
   });
 };
 
@@ -60,6 +63,9 @@ const sendEmail = async (to, subject, text, html) => {
     } else if (error.message && error.message.includes('Missing credentials')) {
       specificCode = 'MISSING_CREDENTIALS';
       specificMessage = 'Missing credentials for PLAIN: EMAIL_USER or EMAIL_PASS is empty or not loaded.';
+    } else if (error.code === 'ENETUNREACH') {
+      specificCode = 'NETWORK_UNREACHABLE';
+      specificMessage = `Network unreachable (${error.code}): Connection to Gmail SMTP failed over IPv6. Ensure family: 4 is configured.`;
     } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKETTIMEDOUT' || error.code === 'ECONNREFUSED') {
       specificCode = 'SMTP_CONNECTION_BLOCKED';
       specificMessage = `Connection to smtp.gmail.com timed out (${error.code}). Render server network may be throttling or blocking outbound SMTP ports (465/587).`;
