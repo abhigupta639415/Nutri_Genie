@@ -10,19 +10,30 @@ import {
   Music,
   AlertCircle,
   Headphones,
+  RotateCcw,
 } from 'lucide-react';
 import { Card, Badge } from './ui';
 
+// Supported audio formats in priority order
+const FORMAT_EXTENSIONS = ['.mp3', '.m4a', '.wav'];
+
 // Free background / motivational workout tracks
-// MP3 files reside in frontend/public/audio/
+// MP3 & M4A files reside in frontend/public/audio/
 const TRACKS = [
-  { name: 'Upbeat Energy', src: '/audio/track1.mp3' },
-  { name: 'Focus Flow', src: '/audio/track2.mp3' },
-  { name: 'Power Beat', src: '/audio/track3.mp3' },
+  { id: 'track1', name: 'Upbeat Energy', file: 'track1', bpm: 128, genre: 'Cardio Boost' },
+  { id: 'track2', name: 'Focus Flow', file: 'track2', bpm: 100, genre: 'Strength Flow' },
+  { id: 'track3', name: 'Power Beat', file: 'track3', bpm: 135, genre: 'HIIT Cadence' },
 ];
+
+// Helper to resolve public assets correctly in dev and on Vercel production
+const resolveAudioPath = (filename, extension) => {
+  const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return `${publicUrl}/audio/${filename}${extension}`;
+};
 
 const WorkoutMusicPlayer = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [formatIndex, setFormatIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
@@ -34,6 +45,8 @@ const WorkoutMusicPlayer = () => {
 
   const audioRef = useRef(null);
   const currentTrack = TRACKS[currentTrackIndex];
+  const activeExtension = FORMAT_EXTENSIONS[formatIndex] || '.mp3';
+  const currentSrc = resolveAudioPath(currentTrack.file, activeExtension);
 
   // Sync volume with audio element
   useEffect(() => {
@@ -51,12 +64,19 @@ const WorkoutMusicPlayer = () => {
       await audioRef.current.play();
       setIsPlaying(true);
     } catch (err) {
-      console.warn('[WorkoutMusicPlayer] Playback error or missing file:', err.message);
+      // Autoplay or network failure
+      console.warn('[WorkoutMusicPlayer] Audio playback notice:', err.message);
       setIsPlaying(false);
-      setHasError(true);
-      setErrorMessage('Track unavailable (place .mp3 files in public/audio)');
+
+      // Attempt fallback format if available (.m4a or .wav)
+      if (formatIndex < FORMAT_EXTENSIONS.length - 1) {
+        setFormatIndex((prev) => prev + 1);
+      } else {
+        setHasError(true);
+        setErrorMessage('Audio paused. Tap Play to resume or skip track.');
+      }
     }
-  }, []);
+  }, [formatIndex]);
 
   // Safe pause handler
   const pauseTrack = useCallback(() => {
@@ -79,6 +99,7 @@ const WorkoutMusicPlayer = () => {
   const handleNext = useCallback(() => {
     setHasError(false);
     setErrorMessage('');
+    setFormatIndex(0);
     setCurrentTrackIndex((prev) => (prev + 1) % TRACKS.length);
   }, []);
 
@@ -86,10 +107,11 @@ const WorkoutMusicPlayer = () => {
   const handlePrev = useCallback(() => {
     setHasError(false);
     setErrorMessage('');
+    setFormatIndex(0);
     setCurrentTrackIndex((prev) => (prev - 1 + TRACKS.length) % TRACKS.length);
   }, []);
 
-  // If track index changes and was playing, load and play new track
+  // When track index or format changes while playing, load and play new source
   const isFirstMount = useRef(true);
   useEffect(() => {
     if (isFirstMount.current) {
@@ -103,7 +125,7 @@ const WorkoutMusicPlayer = () => {
         playTrack();
       }
     }
-  }, [currentTrackIndex, isPlaying, playTrack]);
+  }, [currentTrackIndex, formatIndex, playTrack]);
 
   // Mute / unmute
   const toggleMute = () => {
@@ -142,10 +164,16 @@ const WorkoutMusicPlayer = () => {
     }
   };
 
+  // Graceful error fallback
   const handleAudioError = () => {
-    setIsPlaying(false);
-    setHasError(true);
-    setErrorMessage('Track unavailable (place .mp3 in public/audio)');
+    // If current format failed, try next format (.m4a, .wav)
+    if (formatIndex < FORMAT_EXTENSIONS.length - 1) {
+      setFormatIndex((prev) => prev + 1);
+    } else {
+      setIsPlaying(false);
+      setHasError(true);
+      setErrorMessage('Audio paused. Tap Play to resume or skip track.');
+    }
   };
 
   const formatTime = (secs) => {
@@ -159,10 +187,10 @@ const WorkoutMusicPlayer = () => {
 
   return (
     <Card className="p-4 sm:p-5 border-cyan-500/20 bg-slate-50/60 dark:bg-slate-900/60 backdrop-blur-md transition-all shadow-sm">
-      {/* Hidden Native Audio Element */}
+      {/* Native HTML5 Audio Element with Source Resolution */}
       <audio
         ref={audioRef}
-        src={currentTrack.src}
+        src={currentSrc}
         preload="metadata"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
@@ -209,7 +237,7 @@ const WorkoutMusicPlayer = () => {
                 Workout Beats
               </Badge>
               <span className="text-[11px] text-slate-400 font-medium">
-                Track {currentTrackIndex + 1} of {TRACKS.length}
+                Track {currentTrackIndex + 1} of {TRACKS.length} • {currentTrack.genre}
               </span>
             </div>
             <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate mt-0.5">
@@ -219,6 +247,7 @@ const WorkoutMusicPlayer = () => {
               <span>{formatTime(currentTime)}</span>
               <span>/</span>
               <span>{formatTime(duration)}</span>
+              <span className="text-slate-400">• {currentTrack.bpm} BPM</span>
             </div>
           </div>
         </div>
@@ -309,17 +338,26 @@ const WorkoutMusicPlayer = () => {
         </div>
       )}
 
-      {/* Error / Missing Track Notice */}
+      {/* Graceful Notice if Audio Needs Interaction or Fallback */}
       <AnimatePresence>
         {hasError && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-3 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400"
+            className="mt-3 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400"
           >
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-cyan-500 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline shrink-0"
+            >
+              Skip Track →
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
