@@ -8,9 +8,19 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
  * Operates reliably on cloud environments (like Render) with no SMTP port restrictions.
  */
 const sendEmail = async (to, subject, text, html) => {
-  const apiKey = (process.env.BREVO_API_KEY || '').trim();
-  const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'nutrigeniehealth@gmail.com').trim();
-  const senderName = (process.env.BREVO_SENDER_NAME || 'NutriGenie').trim();
+  // Read key with fallbacks and sanitize against quotes or accidental whitespace/newlines
+  const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.BREVO_APIKEY || process.env.SENDINBLUE_API_KEY || '';
+  const apiKey = rawKey
+    .replace(/^["']|["']$/g, '')
+    .replace(/[\r\n\t ]/g, '')
+    .trim();
+
+  const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'nutrigeniehealth@gmail.com')
+    .replace(/^["']|["']$/g, '')
+    .trim();
+  const senderName = (process.env.BREVO_SENDER_NAME || 'NutriGenie')
+    .replace(/^["']|["']$/g, '')
+    .trim();
 
   if (!apiKey) {
     const errorMsg = 'BREVO_API_KEY environment variable is not configured in Render.';
@@ -20,6 +30,16 @@ const sendEmail = async (to, subject, text, html) => {
       code: 'MISSING_BREVO_KEY',
       error: errorMsg
     };
+  }
+
+  const keyPrefix = apiKey.substring(0, 8);
+  const keySuffix = apiKey.substring(apiKey.length - 4);
+  const keyLength = apiKey.length;
+  console.log(`[EMAIL SERVICE - BREVO] Sending email to: ${to} from: ${senderEmail}`);
+  console.log(`[EMAIL SERVICE - BREVO] Using API Key: ${keyPrefix}...${keySuffix} (length: ${keyLength})`);
+
+  if (!apiKey.startsWith('xkeysib-')) {
+    console.warn(`[EMAIL SERVICE - BREVO] WARNING: The loaded key does NOT start with 'xkeysib-'. You might have copied an SMTP Key instead of a REST API Key from Brevo.`);
   }
 
   const emailPayload = {
@@ -84,10 +104,11 @@ const sendEmail = async (to, subject, text, html) => {
     const brevoData = error.response?.data || error.body;
     const statusCode = error.response?.status || error.statusCode;
 
-    console.error('[EMAIL SERVICE - BREVO] Delivery error:', {
+    console.error('[EMAIL SERVICE - BREVO] Full delivery error details:', {
       status: statusCode,
       data: brevoData,
-      message: error.message
+      message: error.message,
+      keyPreview: `${keyPrefix}... (length: ${keyLength})`
     });
 
     let specificMessage = brevoData?.message || error.message || 'Failed to deliver email via Brevo API';
@@ -96,7 +117,10 @@ const sendEmail = async (to, subject, text, html) => {
     // Diagnose common Brevo API issues
     if (statusCode === 401 || specificCode === 'unauthorized' || (specificMessage && specificMessage.includes('Key not found'))) {
       specificCode = 'BREVO_UNAUTHORIZED';
-      specificMessage = 'Invalid Brevo API key. Please verify BREVO_API_KEY in Render environment variables.';
+      const isCorrectPrefix = apiKey.startsWith('xkeysib-');
+      specificMessage = isCorrectPrefix
+        ? `Invalid Brevo API key (Key starts with 'xkeysib-' and has length ${keyLength}). Please generate a fresh API key in Brevo (SMTP & API > API Keys tab) and paste it into Render.`
+        : `Invalid Brevo API key: The key loaded in Render does NOT start with 'xkeysib-'. You likely copied an SMTP Key instead of an API Key. In Brevo, navigate to SMTP & API, click the 'API Keys' tab (NOT the SMTP tab), generate an API Key, and update BREVO_API_KEY in Render.`;
     } else if (statusCode === 400 && specificMessage.toLowerCase().includes('sender')) {
       specificCode = 'BREVO_SENDER_UNVERIFIED';
       specificMessage = `Sender email "${senderEmail}" is not verified in Brevo. Log in to Brevo > Senders, Domains & IPs and verify ${senderEmail}.`;
