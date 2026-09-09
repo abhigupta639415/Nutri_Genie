@@ -1,47 +1,43 @@
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require('nodemailer');
 
-// Function to send email
+// Nodemailer transporter configured with Gmail service
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// Function to send email via Gmail SMTP
 const sendEmail = async (to, subject, text, html) => {
-  if (!process.env.RESEND_API_KEY) {
-    const errorMsg = 'RESEND_API_KEY is not configured in environment variables.';
-    console.warn(`[EMAIL SERVICE] ${errorMsg}`);
-    return { success: false, error: errorMsg, code: 'MISSING_API_KEY' };
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    const errorMsg = 'EMAIL_USER or EMAIL_PASS is not configured in environment variables.';
+    console.error(`[EMAIL SERVICE] ${errorMsg}`);
+    return { success: false, error: errorMsg, code: 'MISSING_CREDENTIALS' };
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'NutriGenie <onboarding@resend.dev>',
+    const mailOptions = {
+      from: `"NutriGenie" <${emailUser}>`,
       to,
       subject,
       text,
       html,
-    });
+    };
 
-    if (error) {
-      console.error('[EMAIL SERVICE] Resend delivery error:', error);
-      const isDomainRestriction = error.statusCode === 403 ||
-        (typeof error.message === 'string' && (
-          error.message.toLowerCase().includes('testing emails to your own email address') ||
-          error.message.toLowerCase().includes('verify a domain')
-        ));
-
-      return {
-        success: false,
-        error: error.message || 'Failed to deliver email via Resend',
-        code: isDomainRestriction ? 'RESEND_FREE_TIER_DOMAIN_RESTRICTION' : 'RESEND_ERROR',
-        details: error,
-      };
-    }
-
-    console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${data?.id})`);
-    return { success: true, data };
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${info.messageId})`);
+    return { success: true, data: info, messageId: info.messageId };
   } catch (error) {
-    console.error('[EMAIL SERVICE] Unexpected error sending email:', error);
+    console.error('[EMAIL SERVICE] Nodemailer delivery error:', error);
     return {
       success: false,
-      error: error.message || 'Unexpected email delivery exception',
-      code: 'EMAIL_EXCEPTION',
+      error: error.message || 'Failed to deliver email via Gmail SMTP',
+      code: 'SMTP_ERROR',
       details: error,
     };
   }
@@ -494,4 +490,9 @@ async function sendLoginEmail(userEmail, userName, loginDetails = {}) {
     return await sendEmail(userEmail, subject, text, html);
 }
 
-module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail };
+// Alias sendOTPEmail to sendverificationEmail
+async function sendOTPEmail(userEmail, userName, otp) {
+    return await sendverificationEmail(userEmail, userName, otp);
+}
+
+module.exports = { sendRegisterationEmail, sendLoginEmail, sendverificationEmail, sendOTPEmail };

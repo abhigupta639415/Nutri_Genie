@@ -139,12 +139,11 @@ export const AuthProvider = ({ children }) => {
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
-  // Confirms the 6-digit code. On success the backend returns a token,
-  // same as login — so this logs the user in.
-  const verifyEmail = async (email, verificationCode) => {
-    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/verify-email`, {
+  // Confirms the 6-digit OTP code and logs the user in
+  const verifyOtp = async (email, otp) => {
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/verify-otp`, {
       email,
-      verificationCode
+      otp
     });
     const { token: newToken, ...userInfo } = response.data;
     setToken(newToken);
@@ -154,10 +153,15 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
-  const resendVerificationCode = async (email) => {
-    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/resend-verification`, { email });
+  // Dispatches a fresh 6-digit OTP to user's email
+  const sendOtp = async (email) => {
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/send-otp`, { email });
     return response.data;
   };
+
+  // Aliases for backward compatibility
+  const verifyEmail = verifyOtp;
+  const resendVerificationCode = sendOtp;
 
   const logout = () => {
     setToken(null);
@@ -179,6 +183,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
+    sendOtp,
+    verifyOtp,
     verifyEmail,
     resendVerificationCode,
   };

@@ -14,13 +14,28 @@
 
 const express = require('express');
 const router = express.Router();
-const { register, login, getProfile, updateProfile, verifyEmail, resendVerificationCode } = require('../controllers/authController');
+const {
+  register,
+  login,
+  getProfile,
+  updateProfile,
+  sendOtp,
+  verifyOtp,
+  verifyEmail,
+  resendVerificationCode
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 router.post('/register', register);
 router.post('/login', login);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+
+// Real Email OTP Endpoints
+router.post('/send-otp', sendOtp);
+router.post('/verify-otp', verifyOtp);
+
+// Backwards-compatible aliases
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationCode);
 

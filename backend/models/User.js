@@ -190,8 +190,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  // NEW: codes expire so a stale/leaked code can't be used indefinitely
   verificationTokenExpires: {
+    type: Date,
+    default: null
+  },
+  // Real Email OTP Verification fields
+  otp: {
+    type: String,
+    default: null
+  },
+  otpExpiry: {
+    type: Date,
+    default: null
+  },
+  otpLastSentAt: {
     type: Date,
     default: null
   },

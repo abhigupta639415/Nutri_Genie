@@ -9,14 +9,15 @@ const generateToken = (id) => {
   });
 };
 
-// Generate a 6-digit verification code
-const generateVerificationCode = () => {
+// Generate a 6-digit numeric OTP
+const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const VERIFICATION_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_RATE_LIMIT_MS = 60 * 1000;  // 60 seconds rate limit per email
 
-// @desc    Register new user
+// @desc    Register new user & dispatch OTP email
 // @route   POST /api/auth/register
 // @access  Public
 const register = async (req, res) => {
@@ -24,19 +25,20 @@ const register = async (req, res) => {
     const { name, email, password, age, gender, weight, height, goal, activityLevel, dietaryPreference } = req.body;
 
     // Check if user exists
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = email ? email.toLowerCase().trim() : '';
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    const verificationCode = generateVerificationCode();
-
+    const otp = generateOTP();
     const now = new Date();
+    const otpExpiry = new Date(now.getTime() + OTP_EXPIRY_MS);
 
     // Create user (unverified — no token is issued until they confirm their email)
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
       age,
       gender,
@@ -47,50 +49,117 @@ const register = async (req, res) => {
       activityLevel,
       dietaryPreference,
       planStartDate: now,
-      verificationToken: verificationCode,
-      verificationTokenExpires: Date.now() + VERIFICATION_CODE_TTL_MS
+      otp,
+      otpExpiry,
+      otpLastSentAt: now,
+      verificationToken: otp,
+      verificationTokenExpires: otpExpiry,
+      isVerified: false
     });
 
     if (user) {
-      const emailResult = await emailService.sendverificationEmail(user.email, user.name, verificationCode);
-
-      let message = 'Registration successful. Please check your email for a verification code.';
-      let emailWarning = null;
+      // Send real OTP via nodemailer Gmail transporter
+      const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
 
       if (!emailResult.success) {
-        console.warn(`[AUTH] Verification email could not be delivered to ${user.email}:`, emailResult.error);
-        if (emailResult.code === 'RESEND_FREE_TIER_DOMAIN_RESTRICTION') {
-          emailWarning = 'Resend free tier restriction: Emails can only be delivered to the Resend account owner. The verification code has been logged to the server console.';
-        } else if (emailResult.code === 'MISSING_API_KEY') {
-          emailWarning = 'RESEND_API_KEY is not configured. The verification code has been logged to the server console.';
-        } else {
-          emailWarning = `Email delivery warning: ${emailResult.error}`;
-        }
+        console.error(`[AUTH] Failed to deliver initial OTP email to ${user.email}:`, emailResult.error);
       }
 
-      const exposeCode = !emailResult.success || process.env.NODE_ENV !== 'production' || process.env.EXPOSE_VERIFY_CODE === 'true';
-
       res.status(201).json({
-        message,
+        success: true,
+        message: emailResult.success
+          ? 'Registration successful. Please check your email for the 6-digit verification code.'
+          : 'Registration successful. Could not deliver email automatically — please check server email configuration or click Resend Code.',
         email: user.email,
-        emailSent: emailResult.success,
-        emailWarning,
-        devVerificationCode: exposeCode ? verificationCode : undefined
+        emailSent: emailResult.success
       });
     }
   } catch (error) {
+    console.error('Error in register:', error);
     res.status(400).json({ message: error.message });
   }
 };
 
-// @desc    Verify a user's email with the 6-digit code
-// @route   POST /api/auth/verify-email
+// @desc    Send / Resend a 6-digit OTP with 60-second rate-limiting
+// @route   POST /api/auth/send-otp
 // @access  Public
-const verifyEmail = async (req, res) => {
+const sendOtp = async (req, res) => {
   try {
-    const { email, verificationCode } = req.body;
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Please provide an email address' });
+    }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found with this email' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Rate-limit: max 1 request per 60 seconds
+    if (user.otpLastSentAt) {
+      const elapsedMs = Date.now() - new Date(user.otpLastSentAt).getTime();
+      if (elapsedMs < OTP_RATE_LIMIT_MS) {
+        const waitSeconds = Math.ceil((OTP_RATE_LIMIT_MS - elapsedMs) / 1000);
+        return res.status(429).json({
+          message: `Please wait ${waitSeconds} seconds before requesting a new OTP.`,
+          waitSeconds
+        });
+      }
+    }
+
+    const otp = generateOTP();
+    const now = new Date();
+    const otpExpiry = new Date(now.getTime() + OTP_EXPIRY_MS);
+
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    user.otpLastSentAt = now;
+    user.verificationToken = otp;
+    user.verificationTokenExpires = otpExpiry;
+    await user.save();
+
+    const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
+
+    if (!emailResult.success) {
+      console.error(`[AUTH] Failed to send OTP email to ${user.email}:`, emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: emailResult.code === 'MISSING_CREDENTIALS'
+          ? 'Email credentials not configured in environment variables (EMAIL_USER / EMAIL_PASS).'
+          : 'Failed to send OTP email. Please try again in a few moments.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'A fresh 6-digit OTP has been sent to your email.'
+    });
+  } catch (error) {
+    console.error('Error in sendOtp:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verify 6-digit OTP and mark user as verified
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp, verificationCode } = req.body;
+    const submittedOtp = (otp || verificationCode || '').toString().trim();
+
+    if (!email || !submittedOtp) {
+      return res.status(400).json({ message: 'Please provide both email and 6-digit OTP' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -100,28 +169,35 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Email is already verified' });
     }
 
-    if (!user.verificationToken || user.verificationToken !== verificationCode) {
-      return res.status(400).json({ message: 'Invalid verification code' });
+    const storedOtp = user.otp || user.verificationToken;
+    if (!storedOtp) {
+      return res.status(400).json({ message: 'No OTP request found. Please request a new OTP.' });
     }
 
-    if (user.verificationTokenExpires && user.verificationTokenExpires < Date.now()) {
-      return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+    if (storedOtp !== submittedOtp) {
+      return res.status(400).json({ message: 'Invalid OTP code. Please check your email and try again.' });
     }
 
-    // Mark the user as verified and clear the code
+    const expiry = user.otpExpiry || user.verificationTokenExpires;
+    if (expiry && new Date(expiry).getTime() < Date.now()) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Mark as verified and clear OTP fields (Requirement 6)
     user.isVerified = true;
+    user.otp = null;
+    user.otpExpiry = null;
+    user.otpLastSentAt = null;
     user.verificationToken = null;
     user.verificationTokenExpires = null;
     await user.save();
 
-    // Welcome email now that they're actually verified (fire-and-forget)
+    // Welcome email (fire-and-forget)
     emailService.sendRegisterationEmail(user.email, user.name)
-      .catch((error) => {
-        console.error('Welcome email failed:', error);
-      });
+      .catch((error) => console.error('Welcome email failed:', error));
 
-    // Verification succeeded — this is the point where they actually get logged in
     res.json({
+      success: true,
       message: 'Email verified successfully',
       _id: user._id,
       name: user.name,
@@ -129,59 +205,14 @@ const verifyEmail = async (req, res) => {
       token: generateToken(user._id)
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error in verifyOtp:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Resend a fresh verification code
-// @route   POST /api/auth/resend-verification
-// @access  Public
-const resendVerificationCode = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'Email is already verified' });
-    }
-
-    const verificationCode = generateVerificationCode();
-    user.verificationToken = verificationCode;
-    user.verificationTokenExpires = Date.now() + VERIFICATION_CODE_TTL_MS;
-    await user.save();
-
-    const emailResult = await emailService.sendverificationEmail(user.email, user.name, verificationCode);
-
-    let message = 'A new verification code has been sent to your email.';
-    let emailWarning = null;
-
-    if (!emailResult.success) {
-      console.warn(`[AUTH] Resend verification email failed for ${user.email}:`, emailResult.error);
-      if (emailResult.code === 'RESEND_FREE_TIER_DOMAIN_RESTRICTION') {
-        emailWarning = 'Resend free tier restriction: Test emails can only be sent to the Resend account owner. The verification code has been logged to the server console.';
-      } else if (emailResult.code === 'MISSING_API_KEY') {
-        emailWarning = 'RESEND_API_KEY is not configured. The verification code has been logged to the server console.';
-      } else {
-        emailWarning = `Email delivery warning: ${emailResult.error}`;
-      }
-    }
-
-    const exposeCode = !emailResult.success || process.env.NODE_ENV !== 'production' || process.env.EXPOSE_VERIFY_CODE === 'true';
-
-    res.json({
-      message,
-      emailSent: emailResult.success,
-      emailWarning,
-      devVerificationCode: exposeCode ? verificationCode : undefined
-    });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
+// Backwards-compatible aliases
+const verifyEmail = verifyOtp;
+const resendVerificationCode = sendOtp;
 
 // @desc    Login user
 // @route   POST /api/auth/login
@@ -284,6 +315,8 @@ module.exports = {
   login,
   getProfile,
   updateProfile,
+  sendOtp,
+  verifyOtp,
   verifyEmail,
   resendVerificationCode
 };

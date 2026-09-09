@@ -59,8 +59,6 @@ const Register = () => {
       navigate('/verify-email', {
         state: {
           email: result?.email || data.email,
-          devVerificationCode: result?.devVerificationCode,
-          emailWarning: result?.emailWarning,
         },
       });
     } catch (err) {
