@@ -1,55 +1,162 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Nodemailer transporter configured with Gmail service
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+/**
+ * Creates a Gmail SMTP transporter with production-hardened timeouts and sanitized credentials.
+ */
+const createGmailTransporter = () => {
+  const user = process.env.EMAIL_USER;
+  // Strip any accidental spaces users often paste from Google App Password screen
+  const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '';
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // SSL
+    auth: { user, pass },
+    connectionTimeout: 10000, // 10s connection timeout
+    greetingTimeout: 10000,   // 10s greeting timeout
+    socketTimeout: 15000      // 15s socket timeout
+  });
+};
+
+/**
+ * Sends email via Resend HTTP API (recommended for Render & cloud environments)
+ */
+const sendWithResend = async (to, subject, text, html) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return {
+      success: false,
+      code: 'MISSING_RESEND_KEY',
+      error: 'RESEND_API_KEY environment variable is not configured.'
+    };
   }
-});
 
-// Function to send email via Gmail SMTP
-const sendEmail = async (to, subject, text, html) => {
+  try {
+    const resend = new Resend(apiKey);
+    const fromAddress = process.env.RESEND_FROM || 'NutriGenie <onboarding@resend.dev>';
+
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      text,
+      html
+    });
+
+    if (error) {
+      console.error('[EMAIL SERVICE - RESEND] Error returned by Resend API:', error);
+      let errorMsg = error.message || 'Resend delivery error';
+
+      if (error.message && error.message.includes('testing emails')) {
+        errorMsg = `Resend Free Tier restriction: You can only send to your account email (${error.message}). To send to any user, verify a custom domain in resend.com/domains or use Gmail SMTP.`;
+      }
+
+      return {
+        success: false,
+        code: error.name || 'RESEND_API_ERROR',
+        error: errorMsg,
+        details: error
+      };
+    }
+
+    console.log(`[EMAIL SERVICE - RESEND] Email sent successfully to ${to} (Message ID: ${data?.id})`);
+    return { success: true, data, messageId: data?.id };
+  } catch (err) {
+    console.error('[EMAIL SERVICE - RESEND] Unexpected exception:', err);
+    return {
+      success: false,
+      code: 'RESEND_EXCEPTION',
+      error: err.message || 'Unexpected exception calling Resend API',
+      details: err
+    };
+  }
+};
+
+/**
+ * Sends email via Nodemailer using Gmail SMTP
+ */
+const sendWithNodemailer = async (to, subject, text, html) => {
   const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+  const rawEmailPass = process.env.EMAIL_PASS;
 
-  if (!emailUser || !emailPass) {
-    const errorMsg = 'EMAIL_USER or EMAIL_PASS is not configured in environment variables.';
-    console.error(`[EMAIL SERVICE] ${errorMsg}`);
+  if (!emailUser || !rawEmailPass) {
+    const errorMsg = 'EMAIL_USER or EMAIL_PASS is not configured in Render environment variables.';
+    console.error(`[EMAIL SERVICE - GMAIL] ${errorMsg}`);
     return { success: false, error: errorMsg, code: 'MISSING_CREDENTIALS' };
   }
 
   try {
+    const transporter = createGmailTransporter();
     const mailOptions = {
       from: `"NutriGenie" <${emailUser}>`,
       to,
       subject,
       text,
-      html,
+      html
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL SERVICE] Email sent successfully to ${to} (Message ID: ${info.messageId})`);
+    console.log(`[EMAIL SERVICE - GMAIL] Email sent successfully to ${to} (Message ID: ${info.messageId})`);
     return { success: true, data: info, messageId: info.messageId };
   } catch (error) {
-    console.error('[EMAIL SERVICE] Nodemailer delivery error:', error);
+    console.error('[EMAIL SERVICE - GMAIL] Nodemailer delivery error:', error);
+
+    let specificMessage = error.message || 'Failed to deliver email via Gmail SMTP';
+    let specificCode = error.code || 'SMTP_ERROR';
+
+    // Diagnose common Gmail SMTP errors on cloud hosts like Render
+    if (error.code === 'EAUTH' || (error.response && error.response.includes('535'))) {
+      specificCode = 'GMAIL_AUTH_FAILED';
+      specificMessage = 'Gmail authentication failed (EAUTH 535). You must use a 16-character Google App Password (not your normal Gmail password), and 2-Step Verification must be enabled on your Google Account.';
+    } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKETTIMEDOUT' || error.code === 'ECONNREFUSED') {
+      specificCode = 'SMTP_CONNECTION_BLOCKED';
+      specificMessage = `Connection to smtp.gmail.com timed out (${error.code}). Render cloud servers often block/throttle outbound SMTP ports (465/587). Switching to Resend (RESEND_API_KEY) is recommended.`;
+    } else if (error.code === 'ENOTFOUND' || error.code === 'EDNS') {
+      specificCode = 'DNS_LOOKUP_FAILED';
+      specificMessage = `DNS resolution for smtp.gmail.com failed (${error.code}). Please verify internet connectivity on the server.`;
+    }
+
     return {
       success: false,
-      error: error.message || 'Failed to deliver email via Gmail SMTP',
-      code: 'SMTP_ERROR',
-      details: error,
+      error: specificMessage,
+      code: specificCode,
+      details: error
     };
   }
 };
 
-// async function sendRegisterationEmail(userEmail, userName){
-//     const subject = 'Welcome to AdvBackend!';
-//     const text = `Hello ${userName},\n\nThank you for registering with AdvBackend! We're excited to have you on board.\n\nBest regards,\nThe AdvBackend Team`;
-//     const html = `<p>Hello ${userName},</p><p>Thank you for registering with AdvBackend! We're excited to have you on board.</p><p>Best regards,<br>The AdvBackend Team</p>`;
-    
-//     await sendEmail(userEmail, subject, text, html);
-// }
+/**
+ * Unified sendEmail function: automatically chooses provider or respects EMAIL_PROVIDER
+ */
+const sendEmail = async (to, subject, text, html) => {
+  const provider = (process.env.EMAIL_PROVIDER || '').toLowerCase().trim();
+
+  // If explicitly configured for Resend or RESEND_API_KEY is present (and not explicitly forced to gmail)
+  if (provider === 'resend' || (process.env.RESEND_API_KEY && provider !== 'gmail' && provider !== 'nodemailer')) {
+    return await sendWithResend(to, subject, text, html);
+  }
+
+  // If EMAIL_USER and EMAIL_PASS are present or provider is gmail/nodemailer
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    return await sendWithNodemailer(to, subject, text, html);
+  }
+
+  // If RESEND_API_KEY is present as fallback
+  if (process.env.RESEND_API_KEY) {
+    return await sendWithResend(to, subject, text, html);
+  }
+
+  const missingMsg = 'No email credentials configured. Please set RESEND_API_KEY (for Resend) or EMAIL_USER & EMAIL_PASS (for Gmail SMTP) in Render environment variables.';
+  console.error(`[EMAIL SERVICE] ${missingMsg}`);
+  return {
+    success: false,
+    code: 'MISSING_CREDENTIALS',
+    error: missingMsg
+  };
+};
 
 
 async function sendverificationEmail(userEmail, userName, verificationCode) {

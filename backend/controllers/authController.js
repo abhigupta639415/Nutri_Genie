@@ -62,16 +62,21 @@ const register = async (req, res) => {
       const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
 
       if (!emailResult.success) {
-        console.error(`[AUTH] Failed to deliver initial OTP email to ${user.email}:`, emailResult.error);
+        console.error(`[AUTH] Failed to deliver initial OTP email to ${user.email}:`, {
+          code: emailResult.code,
+          error: emailResult.error,
+          details: emailResult.details
+        });
       }
 
       res.status(201).json({
         success: true,
         message: emailResult.success
           ? 'Registration successful. Please check your email for the 6-digit verification code.'
-          : 'Registration successful. Could not deliver email automatically — please check server email configuration or click Resend Code.',
+          : `Registration successful, but email delivery failed: ${emailResult.error}`,
         email: user.email,
-        emailSent: emailResult.success
+        emailSent: emailResult.success,
+        emailError: emailResult.success ? null : emailResult.error
       });
     }
   } catch (error) {
@@ -127,12 +132,15 @@ const sendOtp = async (req, res) => {
     const emailResult = await emailService.sendOTPEmail(user.email, user.name, otp);
 
     if (!emailResult.success) {
-      console.error(`[AUTH] Failed to send OTP email to ${user.email}:`, emailResult.error);
+      console.error(`[AUTH] Failed to send OTP email to ${user.email}:`, {
+        code: emailResult.code,
+        error: emailResult.error,
+        details: emailResult.details
+      });
       return res.status(500).json({
         success: false,
-        message: emailResult.code === 'MISSING_CREDENTIALS'
-          ? 'Email credentials not configured in environment variables (EMAIL_USER / EMAIL_PASS).'
-          : 'Failed to send OTP email. Please try again in a few moments.'
+        code: emailResult.code || 'EMAIL_SEND_FAILED',
+        message: emailResult.error || 'Failed to send OTP email. Please check server logs.'
       });
     }
 
